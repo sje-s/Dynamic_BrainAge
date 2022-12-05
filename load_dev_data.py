@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 from torch.utils.data import Dataset
@@ -5,48 +6,66 @@ import pandas as pd
 import mat73
 
 
-# make fake FNC data
 class DevData(Dataset):
     def __init__(self,
                  N_components=53,
                  N_timepoints=490,
                  window_size=40,
                  N_subs=200,
-                 sz_mu=0,
-                 sz_std=3,
-                 sz_low=40,
-                 sz_high=80,
-                 N_hc=1024,
-                 hc_mu=0.1,
-                 hc_std=1,
-                 hc_low=20,
-                 hc_high=60):
+                 data_root="/data/qneuromark/Results/DFNC/UKBioBank",
+                 subj_form="Sub%05d",
+                 data_file="UKB_dfnc_sub_001_sess_001_results.mat",
+                 age_csv="/data/users2/mduda/scripts/brainAge/UKBiobank_age_gender_ses01_final.csv",
+                 age_threshold=15
+                 ):
+        """DevData - Load FNCs for UKBiobank
+        KWARGS:
+            N_components    int     the number of ICs
+            N_timepoints    int     the length of the scan
+            window_size     int     window size for dFNC
+            N_subs          int     number of subjects
+            data_root       str     root directory for loading subject data
+            subj_form       strf    format string for resolving subject folders
+            data_file       str     the filename for loading individual subject data
+        """
         self.N_subjects = N_subs
+        # The dFNC filepath for each subject is a format string, where the root and filename stay the same
+        # but subject directory changes
+        self.filepath_form = os.path.join(data_root, subj_form, data_file)
 
+        # Compute the size of the upper-triangle in the FNC matrix
         upper_triangle_size = int(N_components*(N_components - 1)/2)
         ts_length = N_timepoints - window_size
+        # These variables are useful for properly defining the RNN used
         self.dim = upper_triangle_size
         self.seqlen = ts_length
 
-        UKB_demo = pd.read_csv('/data/users2/mduda/scripts/brainAge/UKBiobank_age_gender_ses01_final.csv')
-        UKB_demo_clean = UKB_demo[UKB_demo.age > 15]
-
-
-        sub_data =np.zeros((N_subs, ts_length, upper_triangle_size)) 
-        dfnc_path = "/data/qneuromark/Results/DFNC/UKBioBank/"
-        dfnc_file = "/UKB_dfnc_sub_001_sess_001_results.mat"
-        for i in range(N_subs):
-            fname = dfnc_path + UKB_demo_clean.iloc[i].DFNC_filename + dfnc_file
-            data = mat73.loadmat('/data/qneuromark/Results/DFNC/UKBioBank/Sub00001/UKB_dfnc_sub_001_sess_001_results.mat')
-            dfnc = data['FNCdyn']
-            sub_data[i,:,:] = dfnc[:ts_length, :]
-
-
-        self.data = sub_data.astype('float32')
-        self.age = np.array(UKB_demo_clean.iloc[:N_subs].age).reshape(N_subs, 1).astype('float32')
+        # Load demographic data (small enough to keep in memory)
+        UKB_demo = pd.read_csv(age_csv)
+        UKB_demo_clean = UKB_demo[UKB_demo.age > age_threshold]
+        self.age = np.array(UKB_demo_clean.iloc[:N_subs].age).reshape(
+            N_subs, 1).astype('float32')
 
     def __len__(self):
+        """Returns the length of the dataset
+            i.e. the Number of subjects
+        """
         return self.N_subjects
 
     def __getitem__(self, k):
-        return torch.from_numpy(self.data[k, ...]), torch.from_numpy(self.age[k])
+        """Get an individual FNC matrix (flattened) and Age (integer), resolving filepath format string with index
+            and using mat73 to load data
+        """
+        filepath = self.filepath_form % (k + 1)  # uses MATLAB index
+        data = mat73.loadmat(filepath)
+        dfnc = data['FNCdyn']
+        return torch.from_numpy(dfnc), torch.from_numpy(self.age[k])
+
+
+if __name__ == "__main__":
+    from torch.utils.data import DataLoader
+    test_dataset = DevData(N_subs=16)
+    test_dataloader = DataLoader(test_dataset, batch_size=4, shuffle=True)
+    for batch_i, (fnc, age) in enumerate(test_dataloader):
+        print("Loaded batch %d with FNC shape %s, and average age %.2f" %
+              (batch_i, str(fnc.shape), age.mean().item()))
