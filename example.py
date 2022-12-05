@@ -6,12 +6,13 @@ from fake_fnc import FakeFNC
 from bilstm import BiLSTM
 from sklearn.model_selection import train_test_split
 import numpy as np
+import torch
 
 
 criterion = nn.MSELoss()
-full_dataset = FakeFNC()
+full_dataset = FakeFNC(N_hc=4096, N_sz=4096)
 model = BiLSTM(seqlen=full_dataset.seqlen, dim=full_dataset.dim)
-optimizer = optim.Adam(model.parameters(), lr=0.02)
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
 full_idx = np.arange(len(full_dataset))
 train_idx, test_idx = train_test_split(full_idx, test_size=0.1)
 train_dataset = Subset(full_dataset, train_idx)
@@ -19,7 +20,7 @@ test_dataset = Subset(full_dataset, test_idx)
 
 loaders = {
     "train": DataLoader(train_dataset, batch_size=32),
-    "valid": DataLoader(test_dataset, batch_size=32),
+    "valid": DataLoader(test_dataset, batch_size=len(test_dataset)),
 }
 
 runner = dl.SupervisedRunner(
@@ -44,22 +45,16 @@ runner.train(
     minimize_valid_metric=True,
     verbose=True,
 )
-
-# model evaluation
-metrics = runner.evaluate_loader(
-    loader=loaders["valid"],
-    callbacks=[dl.CriterionCallback(metric_key="loss",
-                                    input_key="logits", target_key="targets")],
+test_loader = DataLoader(test_dataset, batch_size=len(test_dataset))
+checkpoint = utils.load_checkpoint("logs/checkpoints/best_full.pth")
+utils.unpack_checkpoint(
+    checkpoint=checkpoint,
+    model=model,
+    optimizer=optimizer,
+    criterion=criterion
 )
-
-# model inference
-for prediction in runner.predict_loader(loader=loaders["valid"]):
-    assert prediction["logits"].detach().cpu().numpy().shape[-1] == 10
-
-# model post-processing
-model = runner.model.cpu()
-batch = next(iter(loaders["valid"]))[0]
-utils.trace_model(model=model, batch=batch)
-# utils.quantize_model(model=model)
-#utils.prune_model(model=model, pruning_fn="l1_unstructured", amount=0.8)
-# utils.onnx_export(model=model, batch=batch, file="./logs/mnist.onnx", verbose=True
+for data, label in test_loader:
+    prediction = model(data)
+    stacked_labels = torch.stack([prediction, label], 0).squeeze()
+    corr = torch.corrcoef(stacked_labels)
+    print("Correlation with Ground Truth from Bets Model ", corr)
