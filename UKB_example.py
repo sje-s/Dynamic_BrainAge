@@ -11,9 +11,9 @@ import torch
 
 
 criterion = nn.MSELoss()
-full_dataset = DevData() #FakeFNC(N_hc=4096, N_sz=4096)
+full_dataset = DevData(N_subs=2000) #FakeFNC(N_hc=4096, N_sz=4096)
 model = BiLSTM(seqlen=full_dataset.seqlen, dim=full_dataset.dim)
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
 full_idx = np.arange(len(full_dataset))
 train_idx, test_idx = train_test_split(full_idx, test_size=0.1)
 train_dataset = Subset(full_dataset, train_idx)
@@ -34,26 +34,28 @@ runner.train(
     criterion=criterion,
     optimizer=optimizer,
     loaders=loaders,
-    num_epochs=10,
+    num_epochs=15,
     callbacks=[
         dl.CriterionCallback(metric_key="loss",
                              input_key="logits",
                              target_key="targets"),
     ],
-    logdir="./logs",
+    logdir="./logs/test_2000_v2",
     valid_loader="valid",
     valid_metric="loss",
     minimize_valid_metric=True,
     verbose=True,
 )
+
 test_loader = DataLoader(test_dataset, batch_size=len(test_dataset))
-checkpoint = utils.load_checkpoint("logs/checkpoints/best_full.pth")
+checkpoint = utils.load_checkpoint("logs/test_2000_v2/checkpoints/best_full.pth")
 utils.unpack_checkpoint(
     checkpoint=checkpoint,
     model=model,
     optimizer=optimizer,
     criterion=criterion
 )
+
 for data, label in test_loader:
     prediction = model(data)
     stacked_labels = torch.stack([prediction, label], 0).squeeze()

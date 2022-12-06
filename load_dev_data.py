@@ -58,7 +58,7 @@ class DevData(Dataset):
         """
         filepath = self.filepath_form % (k + 1)  # uses MATLAB index
         data = mat73.loadmat(filepath)
-        dfnc = data['FNCdyn']
+        dfnc = data['FNCdyn'][:450,:].astype('float32')
         return torch.from_numpy(dfnc), torch.from_numpy(self.age[k])
 
 
