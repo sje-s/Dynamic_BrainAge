@@ -3,8 +3,8 @@
 #SBATCH --mem=20gb
 #SBATCH -e log_files/error%A-%a.err
 #SBATCH -o log_files/out%A-%a.out
-#SBATCH -t 500
-#SBATCH -J BrainAge_UKB2000
+#SBATCH -t 1000
+#SBATCH -J BrainAge_AD4000
 #SBATCH -A trends53c17
 #SBATCH --oversubscribe
 #SBATCH --mail-type=ALL
@@ -19,7 +19,7 @@ echo $HOSTNAME >&2
 module load python
 source /userapp/virtualenv/mduda/venv/bin/activate
 
-python UKB_example.py
+python allDatasets_example.py
 
 
 sleep 7s
