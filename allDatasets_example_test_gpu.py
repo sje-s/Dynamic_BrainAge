@@ -20,10 +20,9 @@ full_idx = np.arange(len(full_dataset))
 train_idx, test_idx = train_test_split(full_idx, test_size=0.1)
 train_dataset = Subset(full_dataset, train_idx)
 test_dataset = Subset(full_dataset, test_idx)
-'''
 loaders = {
     "train": DataLoader(train_dataset, batch_size=64),
-    "valid": DataLoader(test_dataset, batch_size=len(test_dataset)),
+    "valid": DataLoader(test_dataset, batch_size=64),
 }
 
 runner = dl.SupervisedRunner(
@@ -46,9 +45,8 @@ runner.train(
     valid_loader="valid",
     valid_metric="loss",
     minimize_valid_metric=True,
-    verbose=True,
+    verbose=True    
 )
-'''
 test_loader = DataLoader(test_dataset, batch_size=len(test_dataset))
 checkpoint = utils.load_checkpoint("logs/test_10000_gpu/checkpoints/best_full.pth")
 utils.unpack_checkpoint(

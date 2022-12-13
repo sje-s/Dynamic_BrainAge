@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 import pandas as pd
 import mat73
 import scipy.io
-
+import time
 
 class DevData(Dataset):
     def __init__(self,
@@ -18,6 +18,7 @@ class DevData(Dataset):
                  #data_file="UKB_dfnc_sub_001_sess_001_results.mat",
                  age_csv="/data/users2/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths.csv",
                 #  age_threshold=15
+                converted_csv="./data/converted_files.csv"
                  ):
         """DevData - Load FNCs for UKBiobank
         KWARGS:
@@ -50,6 +51,9 @@ class DevData(Dataset):
             N_subs, 1).astype('float32')
         self.subID = np.array(all_data.loc[self.idxs, "Subject"])
         self.filepath = np.array(all_data.loc[self.idxs, "DFNC_full_fname"])
+        self.converted = None
+        if converted_csv:
+            self.converted = pd.read_csv(converted_csv)
 
     def __len__(self):
         """Returns the length of the dataset
@@ -60,19 +64,26 @@ class DevData(Dataset):
     def __getitem__(self, k):
         """Get an individual FNC matrix (flattened) and Age (integer), resolving filepath format string with index
             and using mat73 to load data
-        """
+        """        
         filepath = self.filepath[k]
-        try:
-            data = mat73.loadmat(filepath)
-        except:
-            data = scipy.io.loadmat(filepath)
-        dfnc = data['FNCdyn'][:self.seqlen,:].astype('float32')
-        return torch.from_numpy(dfnc), torch.from_numpy(self.age[k])
+        if self.converted is not None and filepath == self.converted['old_filename'].iloc[k]:
+            filepath = self.converted['new_filename'].iloc[k]
+            data = torch.load(filepath)
+            dfnc = data[:self.seqlen,:].float()
+            return dfnc, torch.from_numpy(self.age[k])
+        else:
+            try:
+                data = mat73.loadmat(filepath)
+            except:
+                data = scipy.io.loadmat(filepath)
+            dfnc = data['FNCdyn'][:self.seqlen,:].astype('float32')
+            return torch.from_numpy(dfnc), torch.from_numpy(self.age[k])            
+        
 
 
 if __name__ == "__main__":
     from torch.utils.data import DataLoader
-    test_dataset = DevData(N_subs=16)
+    test_dataset = DevData(N_subs=200)
     test_dataloader = DataLoader(test_dataset, batch_size=4, shuffle=True)
     for batch_i, (fnc, age) in enumerate(test_dataloader):
         print("Loaded batch %d with FNC shape %s, and average age %.2f" %
