@@ -3,24 +3,24 @@ DEFAULTS = {
     # passed to getattr from torch.nn
     "criterion": "MSELoss",
     # key passed to get_dataset
-    "train-dataset": "ukbhcp1200",
+    "train-dataset": "None",
     # args passed to get_dataset
     "train-dataset-args": "[]",
     # kwargs passed to get_dataset
-    "train-dataset-kwargs": '{"N_subs": 10000}',
+    "train-dataset-kwargs": '{"N_subs": 22}',
     # key passed to get dataset
-    "test-dataset": "valid",
+    "test-dataset": "cadasil",
     # args passed to get dataset
-    "test-dataset-args": '{}',
+    "test-dataset-args": '[]',
     # kwargs passed to get dataset
-    "test-dataset-kwargs": '[]',
+    "test-dataset-kwargs": '{"N_timepoints": 448}',
     # key passed to get_model
     "model": "BiLSTM",
     # args passed to get_model
     "model-args": '[448,1378]',
     # kwargs passed to get_model
     "model-kwargs": '{}',
-    "inference-model": "model.best.pth",
+    "inference-model": "/data/users2/bbaker/projects/cadasil_analysis/LSTM_BrainAge/logs/E0001_first_model/run_0/checkpoints/model.best.pth",
     # passed to getattr from torch.optim
     "optimizer": "Adam",
     "optim-kwargs": '{"rho": 1e-6, "betas": [0.9, 0.9999]}',

@@ -1,16 +1,16 @@
 #!/bin/bash
-experiment_name="E0001_first_model"
+experiment_name="E0002_cadasil_inference"
 criterion_=( "MSELoss" )
-train_dataset_=( "ukbhcp1200" )
+train_dataset_=( "None" )
 train_dataset_args_=( "[]" )
-train_dataset_kwargs_=( '{"N_subs":10000}' )
-test_dataset_=( "valid" )
+train_dataset_kwargs_=( '{"N_subs":15}' )
+test_dataset_=( "cadasil" )
 test_dataset_args_=( "[]" )
-test_dataset_kwargs_=( "{}" )
+test_dataset_kwargs_=( '{"N_timepoints":448}' )
 model_=( "bilstm" )
 model_args_=( "[448,1378]" )
 model_kwargs_=( "{}" )
-inference_model_=( "model.best.pth" )
+inference_model_=( "logs/E0001_first_model/run_0/checkpoints/model.best.pth" "logs/E0001_first_model/run_1/checkpoints/model.best.pth" "logs/E0001_first_model/run_2/checkpoints/model.best.pth" "logs/E0001_first_model/run_3/checkpoints/model.best.pth" "logs/E0001_first_model/run_4/checkpoints/model.best.pth" "logs/E0001_first_model/run_5/checkpoints/model.best.pth" "logs/E0001_first_model/run_6/checkpoints/model.best.pth" "logs/E0001_first_model/run_7/checkpoints/model.best.pth" "logs/E0001_first_model/run_8/checkpoints/model.best.pth" "logs/E0001_first_model/run_9/checkpoints/model.best.pth" )
 optimizer_=( "Adam" )
 optim_kwargs_=( "{}" )
 batch_size_=( "64" )
@@ -21,7 +21,7 @@ epoch_=( "100" )
 train_metrics_=( '["loss","correlation"]' )
 test_metrics_=( '["loss","correlation"]' )
 seed_=( "314159" )
-k_=( 0 1 2 3 4 5 6 7 8 9 )
+k_=( 0 )
 run=0
 for criterion in "${criterion_[@]}"; do
 for train_dataset in "${train_dataset_[@]}"; do 
