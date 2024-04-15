@@ -13,7 +13,7 @@ class CadasilData(Dataset):
                  N_components=53,
                  N_timepoints=929,
                  N_subs=15,
-                 phenotypes="/data/users2/bbaker/projects/cadasil_analysis/CADASIL_phenotype_full.csv",
+                 phenotypes="/data/users3/bbaker/projects/cadasil_analysis/CADASIL_phenotype_full.csv",
                  target_variable="age"
                  ):
         """DevData - Load FNCs for UKBiobank

@@ -20,7 +20,7 @@ DEFAULTS = {
     "model-args": '[448,1378]',
     # kwargs passed to get_model
     "model-kwargs": '{}',
-    "inference-model": "/data/users2/bbaker/projects/cadasil_analysis/LSTM_BrainAge/logs/E0001_first_model/run_0/checkpoints/model.best.pth",
+    "inference-model": "/data/users3/bbaker/projects/cadasil_analysis/LSTM_BrainAge/logs/E0001_first_model/run_0/checkpoints/model.best.pth",
     # passed to getattr from torch.optim
     "optimizer": "Adam",
     "optim-kwargs": '{"rho": 1e-6, "betas": [0.9, 0.9999]}',
