@@ -1,4 +1,4 @@
-# BrainAge with LSTM
+# BrainAge with Dynamic Models
 
 Single-layer LSTM which predicts BrainAge.
 This is just a starting example.
