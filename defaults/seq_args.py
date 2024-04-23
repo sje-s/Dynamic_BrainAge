@@ -7,7 +7,7 @@ DEFAULTS = {
     # args passed to get_dataset
     "train-dataset-args": "[]",
     # kwargs passed to get_dataset
-    "train-dataset-kwargs": '{"N_subs": 10000}',
+    "train-dataset-kwargs": '{"N_subs": 10000, "sequential": true}',
     # key passed to get dataset
     "test-dataset": "valid",
     # args passed to get dataset
@@ -15,22 +15,22 @@ DEFAULTS = {
     # kwargs passed to get dataset
     "test-dataset-kwargs": '[]',
     # key passed to get_model
-    "model": "BiLSTM",
+    "model": "simpleseqrnn",
     # args passed to get_model
     "model-args": '[448,1378]',
     # kwargs passed to get_model
     "model-kwargs": '{}',
-    "inference-model": "model.best.pth",
+    "inference-model": "<EVAL>os.path.join(args.logdir,'checkpoints','best_full.pth')",
     # passed to getattr from torch.optim
     "optimizer": "Adam",
     "optim-kwargs": '{"rho": 1e-6, "betas": [0.9, 0.9999]}',
     "batch-size": 64,
-    "lr": 1e-6,
+    "lr": 1e-3,
     "weight-decay": 0,
     "num-folds": 10,
     "epochs": 100,
-    "train-metrics": '["loss","correlation"]',     # json parsed
-    "test-metrics": '["loss","correlation"]',
+    "train-metrics": '["loss"]',     # json parsed
+    "test-metrics": '["loss"]',
     "seed": 314159,
     "logdir": "logs/test",
     "k": 0,

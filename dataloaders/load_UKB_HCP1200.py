@@ -16,9 +16,11 @@ class UKBHCP1200Data(Dataset):
                  #data_root="/data/qneuromark/Results/DFNC/UKBioBank",
                  #subj_form="%s", #"Sub%05d",
                  #data_file="UKB_dfnc_sub_001_sess_001_results.mat",
-                 age_csv="/data/users2/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths.csv",
+                 age_csv="/data/users3/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths.csv",
                 #  age_threshold=15
-                converted_csv="./data/converted_files.csv"
+                converted_csv="./data/converted_files.csv",
+                sequential=False,
+                classification=False
                  ):
         """DevData - Load FNCs for UKBiobank
         KWARGS:
@@ -44,6 +46,7 @@ class UKBHCP1200Data(Dataset):
         # Load demographic data (small enough to keep in memory)
         # UKB_demo = pd.read_csv(age_csv)
         # UKB_demo_clean = UKB_demo[UKB_demo.age > age_threshold]
+        self.sequential = sequential
         all_data = pd.read_csv(age_csv)
         np.random.seed(319)
         self.idxs = np.random.permutation(len(all_data))[:N_subs]
@@ -70,6 +73,9 @@ class UKBHCP1200Data(Dataset):
             filepath = self.converted['new_filename'].iloc[k]
             data = torch.load(filepath)
             dfnc = data[:self.seqlen,:].float()
+            if self.sequential:
+                age = self.age[k][0]                
+                return dfnc, torch.full((self.seqlen,), age).to(dfnc.device)
             return dfnc, torch.from_numpy(self.age[k])
         else:
             try:
@@ -77,13 +83,15 @@ class UKBHCP1200Data(Dataset):
             except:
                 data = scipy.io.loadmat(filepath)
             dfnc = data['FNCdyn'][:self.seqlen,:].astype('float32')
+            if self.sequential:
+                return torch.from_numpy(dfnc), torch.full(self.seqlen, torch.from_numpy(self.age[k]).item())
             return torch.from_numpy(dfnc), torch.from_numpy(self.age[k])            
         
 
 
 if __name__ == "__main__":
     from torch.utils.data import DataLoader
-    test_dataset = DevData(N_subs=200)
+    test_dataset = UKBHCP1200Data(N_subs=200, sequential=True)
     test_dataloader = DataLoader(test_dataset, batch_size=4, shuffle=True)
     for batch_i, (fnc, age) in enumerate(test_dataloader):
         print("Loaded batch %d with FNC shape %s, and average age %.2f" %

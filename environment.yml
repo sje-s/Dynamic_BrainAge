@@ -158,4 +158,4 @@ dependencies:
     - typing-extensions==4.4.0
     - urllib3==1.26.13
     - yarg==0.1.9
-prefix: /data/users2/bbaker/miniconda3/envs/catalyst3.9
+prefix: /data/users2/bbaker43/anaconda3/envs/catalyst3.9

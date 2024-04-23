@@ -13,7 +13,10 @@ import json
 import inspect
 import pandas as pd
 from callbacks.CorrelationCallback import CorrelationCallback
-from defaults.default_args import DEFAULTS, HELP
+#from default_args import DEFAULTS, HELP
+from defaults.seq_args import DEFAULTS, HELP
+#from defualts.inference_args_seq import DEFAULTS, HELP
+
 #from inference_args import DEFAULTS, HELP
 # Begin Argument Parsing
 parser = argparse.ArgumentParser("LSTM for BrainAge")
@@ -21,11 +24,6 @@ for key, val in DEFAULTS.items():
     parser.add_argument("--%s" % key, default=val,
                         type=type(val), help=HELP[key])
 args = parser.parse_args()
-old_logdir = args.logdir
-i = 1
-while os.path.exist(args.logdir):
-    args.logdir = old_logdir + "_" + str(i)
-    i += 1
 os.makedirs(args.logdir, exist_ok=True)
 json.dump(args.__dict__, open(os.path.join(
     args.logdir, "parameters.json"), "w"))
@@ -35,6 +33,7 @@ np.random.seed(args.seed)
 # Resolve Pytorch SubModules
 args.optimizer = getattr(torch.optim, args.optimizer)
 args.criterion = getattr(torch.nn, args.criterion)
+
 # Resolve dataset and model
 full_train_dataset = None
 if args.train_dataset is not None:
@@ -65,6 +64,8 @@ if full_train_dataset is not None:
         args.optim_kwargs).items() if k in sig.parameters.keys()}
     optimizer = args.optimizer(
         model.parameters(), lr=args.lr, weight_decay=args.weight_decay, **optim_kwargs)
+    #scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
+    scheduler = None
     full_idx = np.arange(len(full_train_dataset))
     kfold = KFold(n_splits=args.num_folds,
                   shuffle=True, random_state=args.seed)
@@ -79,9 +80,19 @@ if full_train_dataset is not None:
         "train": DataLoader(train_dataset, batch_size=args.batch_size),
         "valid": DataLoader(valid_dataset, batch_size=args.batch_size),
     }
-
+    """
+    print("DEBUG")
+    model = model.cuda()
+    for i, batch in enumerate(loaders['train']):
+        img, target = batch        
+        img=img.cuda()
+        target=target.cuda()
+        yhat = model(img)
+        print("HSAPES", target.shape, yhat.shape)
+        break
+    """
     runner = dl.SupervisedRunner(
-        input_key="features", output_key="logits", target_key="targets", loss_key="loss"
+        input_key="features", output_key="logits", target_key="targets", loss_key="loss", 
     )
     # add callbacks
     callbacks = []
@@ -94,6 +105,7 @@ if full_train_dataset is not None:
             callbacks.append(
                 CorrelationCallback(input_key="logits", target_key="targets")
             )
+        #callbacks.append(dl.SchedulerCallback(loader_key="valid", metric_key="loss"))
     # model training
     runner.train(
         model=model,
@@ -106,13 +118,16 @@ if full_train_dataset is not None:
         valid_loader="valid",
         valid_metric="loss",
         minimize_valid_metric=True,
-        verbose=True
+        verbose=True,
+        #scheduler=scheduler
     )
 if full_inference_dataset is not None:
     test_loader = DataLoader(full_inference_dataset,
                              batch_size=args.batch_size)
+    if "<EVAL>" in args.inference_model:
+        args.inference_model = eval(args.inference_model.replace("<EVAL>",""))
     checkpoint = utils.load_checkpoint(args.inference_model)
-    model.load_state_dict(checkpoint)
+    model.load_state_dict(checkpoint['model_state_dict'])
     # add callbacks
     callbacks = []
     for metric in args.test_metrics:
@@ -128,8 +143,8 @@ if full_inference_dataset is not None:
         callbacks=callbacks,
         model=model
     )
-    metrics = [runner.experiment_metrics[1]['valid']]
-    df = pd.DataFrame(metrics)
+    #metrics = [runner.experiment_metrics[1]['valid']]
+    #df = pd.DataFrame(metrics)
 
     all_predictions = []
     for prediction in runner.predict_loader(loader=test_loader):
@@ -137,7 +152,7 @@ if full_inference_dataset is not None:
     all_predictions = np.concatenate(all_predictions, 0)
     savedir = os.path.join(args.logdir, "predictions")
     os.makedirs(savedir, exist_ok=True)
-    df.to_csv(os.path.join(savedir, "test.csv"), index=False)
+    #df.to_csv(os.path.join(savedir, "test.csv"), index=False)
 
     np.savetxt(os.path.join(savedir, "predictions.txt"),
                all_predictions, fmt="%f")

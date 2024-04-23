@@ -17,7 +17,7 @@ class ConvertData(Dataset):
                  #data_root="/data/qneuromark/Results/DFNC/UKBioBank",
                  #subj_form="%s", #"Sub%05d",
                  #data_file="UKB_dfnc_sub_001_sess_001_results.mat",
-                 age_csv="/data/users2/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths.csv",
+                 age_csv="/data/users3/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths.csv",
                 #  age_threshold=15
                  ):
         """DevData - Load FNCs for UKBiobank

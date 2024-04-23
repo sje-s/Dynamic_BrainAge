@@ -1,0 +1,6 @@
+slurm/logs/*
+logs/*
+figures/*
+data/*
+*.pyc
+experiments/*.sh
