@@ -7,13 +7,13 @@ import json
 import glob
 
 parser = argparse.ArgumentParser("LSTM-BrainAge Plots")
-parser.add_argument("--experiment", default="SE0002_bl_ba")
+parser.add_argument("--experiment", default="RE0002_grid_search")
 parser.add_argument("--result-dir", default="figures")
 parser.add_argument("--font-scale", default=2)
-#parser.add_argument(
-#    "--plots", default='["lineplot:step X loss;{}", "lineplot:step X correlation/mean;{}"]')
 parser.add_argument(
-    "--plots", default='["lineplot:step X loss;{}"]')
+    "--plots", default='["lineplot:step X loss;{}", "lineplot:step X correlation/mean;{}"]')
+#parser.add_argument(
+#    "--plots", default='["lineplot:step X loss;{}"]')
 args = parser.parse_args()
 plots = json.loads(args.plots)
 outdir = os.path.join(args.result_dir, args.experiment)
