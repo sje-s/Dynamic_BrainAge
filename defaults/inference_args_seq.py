@@ -9,20 +9,18 @@ DEFAULTS = {
     # kwargs passed to get_dataset
     "train-dataset-kwargs": '{"N_subs": 22}',
     # key passed to get dataset
-    "test-dataset": "cadasil",
+    "test-dataset": "ukbhcp1200",
     # args passed to get dataset
     "test-dataset-args": '[]',
     # kwargs passed to get dataset
-    "test-dataset-kwargs": '{"N_timepoints": 448}',
-
+    "test-dataset-kwargs": '{"N_subs": 10, "sequential": true}',
     # key passed to get_model
-    "model": "seqrnn",
+    "model": "simpleseqrnn",
     # args passed to get_model
     "model-args": '[448,1378]',
     # kwargs passed to get_model
-    "model-kwargs": '{"num_layers":3}',
-    "inference-model": "/data/users3/bbaker/projects/LSTM_BrainAge/logs/SE0001_seq_ba/run_4/checkpoints/best_full.pth",
-    # passed to getattr from torch.optim
+    "model-kwargs": '{"num_layers":3,"rnn":"gru"}',
+    "inference-model": "/data/users3/bbaker/projects/LSTM_BrainAge/logs/SE0004_gru_ba/run_3/checkpoints/best_full.pth",    # passed to getattr from torch.optim
     "optimizer": "Adam",
     "optim-kwargs": '{"rho": 1e-6, "betas": [0.9, 0.9999]}',
     "batch-size": 64,
@@ -35,6 +33,7 @@ DEFAULTS = {
     "seed": 314159,
     "logdir": "logs/test",
     "k": 0,
+        "inference-only": True
 }
 
 HELP = {
@@ -61,5 +60,6 @@ HELP = {
     "train-metrics": "The metrics to compute for training (JSON parsed list) <loss/correlation/auc>",
     "test-metrics": "The metrics to compute for testing (JSON parsed list) <loss/correlation/auc>",
     "seed": "The seed to initialize ALL RANDOM STATES",
-    "logdir": "The logging directory, where results are saved (created upon runtime)"
+    "logdir": "The logging directory, where results are saved (created upon runtime)",
+    "inference-only": "Only use the inference model. Do not train"
 }

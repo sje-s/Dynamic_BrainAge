@@ -10,12 +10,13 @@ import numpy as np
 import torch
 import argparse
 import json
+import tqdm
 import inspect
 import pandas as pd
 from callbacks.CorrelationCallback import CorrelationCallback
 #from default_args import DEFAULTS, HELP
 from defaults.seq_args import DEFAULTS, HELP
-#from defualts.inference_args_seq import DEFAULTS, HELP
+from defaults.inference_args_seq import DEFAULTS, HELP
 
 #from inference_args import DEFAULTS, HELP
 # Begin Argument Parsing
@@ -58,7 +59,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.devices
 # initialize criterion and optimizer
 criterion = args.criterion()
 
-if full_train_dataset is not None:
+if not args.inference_only and full_train_dataset is not None:
     sig = inspect.signature(args.optimizer)
     optim_kwargs = {k: v for k, v in json.loads(
         args.optim_kwargs).items() if k in sig.parameters.keys()}
@@ -123,7 +124,8 @@ if full_train_dataset is not None:
     )
 if full_inference_dataset is not None:
     test_loader = DataLoader(full_inference_dataset,
-                             batch_size=args.batch_size)
+                             batch_size=args.batch_size, 
+                             shuffle=False)
     if "<EVAL>" in args.inference_model:
         args.inference_model = eval(args.inference_model.replace("<EVAL>",""))
     checkpoint = utils.load_checkpoint(args.inference_model)
@@ -147,12 +149,25 @@ if full_inference_dataset is not None:
     #df = pd.DataFrame(metrics)
 
     all_predictions = []
-    for prediction in runner.predict_loader(loader=test_loader):
-        all_predictions.append(prediction["logits"].detach().cpu().numpy())
-    all_predictions = np.concatenate(all_predictions, 0)
+    subjects = ["sub-"+str(i) for i in range(len(full_inference_dataset))]
+    labels = [-1 for i in range(len(full_inference_dataset))]
+    if hasattr(full_inference_dataset, "subID"):
+        subjects = full_inference_dataset.subID
+    if hasattr(full_inference_dataset, "age"):
+        labels = full_inference_dataset.age
+    for prediction in tqdm.tqdm(runner.predict_loader(loader=test_loader)):
+        brainage_batch = prediction["logits"].detach().cpu().numpy()
+        for i, brainage in enumerate(brainage_batch):
+            subject = subjects[i]
+            age = labels[i][0]
+            for t, brainage_val in enumerate(brainage):
+                delta = -1
+                if age != -1:
+                    delta = brainage_val-age
+                row = dict(subject=subject, brainage=brainage_val, age=age, delta=delta, time=t)
+                all_predictions.append(row)
+    #all_predictions = np.concatenate(all_predictions, 0)
     savedir = os.path.join(args.logdir, "predictions")
-    os.makedirs(savedir, exist_ok=True)
-    #df.to_csv(os.path.join(savedir, "test.csv"), index=False)
-
-    np.savetxt(os.path.join(savedir, "predictions.txt"),
-               all_predictions, fmt="%f")
+    #os.makedirs(savedir, exist_ok=True)
+    all_predictions = pd.DataFrame(all_predictions)
+    all_predictions.to_csv(os.path.join(savedir, "predictions.csv"), index=False)

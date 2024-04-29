@@ -17,8 +17,10 @@ class ConvertData(Dataset):
                  #data_root="/data/qneuromark/Results/DFNC/UKBioBank",
                  #subj_form="%s", #"Sub%05d",
                  #data_file="UKB_dfnc_sub_001_sess_001_results.mat",
-                 age_csv="/data/users3/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths.csv",
+#                 age_csv="/data/users3/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths.csv",
+                age_csv="/data/users3/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths_dFNC_sMRI_cogScores_v2.csv",
                 #  age_threshold=15
+                random=False
                  ):
         """DevData - Load FNCs for UKBiobank
         KWARGS:
@@ -47,11 +49,15 @@ class ConvertData(Dataset):
         all_data = pd.read_csv(age_csv)
         self.seqlen = N_cut
         np.random.seed(319)
-        self.idxs = np.random.permutation(len(all_data))[:N_subs]
+        if random:
+            self.idxs = np.random.permutation(len(all_data))[:N_subs]
+        else:
+            self.idxs = np.arange(0, min(N_subs, len(all_data)))
         self.age = np.array(all_data.loc[self.idxs, "age"]).reshape(
             N_subs, 1).astype('float32')
         self.subID = np.array(all_data.loc[self.idxs, "Subject"])
         self.filepath = np.array(all_data.loc[self.idxs, "DFNC_full_fname"])
+        self.session = np.array(all_data.loc[self.idxs, "session"])
 
     def __len__(self):
         """Returns the length of the dataset
@@ -74,7 +80,7 @@ class ConvertData(Dataset):
             #print("\tscipy")
         #print("\t\truntime ", time.time() - start)
         dfnc = data['FNCdyn'].astype('float32')
-        return torch.from_numpy(dfnc), filepath, torch.from_numpy(self.age[k])
+        return torch.from_numpy(dfnc), filepath, torch.from_numpy(self.age[k]), self.session[k]
 
 
 if __name__ == "__main__":
@@ -82,13 +88,14 @@ if __name__ == "__main__":
     import pandas as pd
     import tqdm
     rows = []
-    test_dataset = ConvertData(N_subs=15885)
+    test_dataset = ConvertData(N_subs=22569)
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False)
-    for batch_i, (fnc, fname, age) in tqdm.tqdm(enumerate(test_dataloader)):
-        #print(fnc.shape, fname[0])
-        cfname = "/data/collaboration/brainHack2022/bbaker/fnc_lstm/data/" + fname[0][1:].replace("/","-") + ".pt"
+    for batch_i, (fnc, fname, age,session) in tqdm.tqdm(enumerate(test_dataloader)):
+        #print(fnc.shape, fname[0])        
+        fname = os.path.basename(fname[0])
+        cfname = "/data/users3/bbaker/projects/LSTM_BrainAge/data/fnc/v2/" + fname + ".pt"
         torch.save(fnc[0], cfname)
-        rows.append(dict(old_filename=fname[0], new_filename=cfname, age=age))
+        rows.append(dict(old_filename=fname[0], new_filename=cfname, age=age, session=session))
         #break
-        df = pd.DataFrame(rows)
-        df.to_csv('./data/converted_files.csv')
+    df = pd.DataFrame(rows)
+    df.to_csv('./data/converted_files_v2.csv')

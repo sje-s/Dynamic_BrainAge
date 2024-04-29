@@ -34,6 +34,7 @@ DEFAULTS = {
     "seed": 314159,
     "logdir": "logs/test",
     "k": 0,
+    "inference-only": False
 }
 
 HELP = {
@@ -60,5 +61,6 @@ HELP = {
     "train-metrics": "The metrics to compute for training (JSON parsed list) <loss/correlation/auc>",
     "test-metrics": "The metrics to compute for testing (JSON parsed list) <loss/correlation/auc>",
     "seed": "The seed to initialize ALL RANDOM STATES",
-    "logdir": "The logging directory, where results are saved (created upon runtime)"
+    "logdir": "The logging directory, where results are saved (created upon runtime)",
+    "inference-only": "Only use the inference model. Do not train"
 }

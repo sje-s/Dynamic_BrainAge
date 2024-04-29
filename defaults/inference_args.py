@@ -20,7 +20,7 @@ DEFAULTS = {
     "model-args": '[448,1378]',
     # kwargs passed to get_model
     "model-kwargs": '{}',
-    "inference-model": "/data/users3/bbaker/projects/cadasil_analysis/LSTM_BrainAge/logs/E0001_first_model/run_0/checkpoints/model.best.pth",
+    "inference-model": "/data/users3/bbaker/projects/cadasil_analysis/LSTM_BrainAge/logs/E0001_first_model/run_0/checkpoints/best.pth",
     # passed to getattr from torch.optim
     "optimizer": "Adam",
     "optim-kwargs": '{"rho": 1e-6, "betas": [0.9, 0.9999]}',
@@ -34,6 +34,7 @@ DEFAULTS = {
     "seed": 314159,
     "logdir": "logs/test",
     "k": 0,
+    "inference-only": True
 }
 
 HELP = {
@@ -60,5 +61,6 @@ HELP = {
     "train-metrics": "The metrics to compute for training (JSON parsed list) <loss/correlation/auc>",
     "test-metrics": "The metrics to compute for testing (JSON parsed list) <loss/correlation/auc>",
     "seed": "The seed to initialize ALL RANDOM STATES",
-    "logdir": "The logging directory, where results are saved (created upon runtime)"
+    "logdir": "The logging directory, where results are saved (created upon runtime)",
+    "inference-only": "Only use the inference model. Do not train"
 }

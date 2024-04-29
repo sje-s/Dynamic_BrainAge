@@ -51,7 +51,7 @@ class SeqTransformer(nn.Module):
             num_layers,
             vocab_size,
             dropout_p,
-            tie_output_to_embedding,
+            tie_output_to_embedding
         )
         if type(activation_function) is str:
             activation_function = get_activation(activation_function)
@@ -72,8 +72,8 @@ class SeqTransformer(nn.Module):
                 xavier_uniform_(p)
 
     def forward(self, x):
-        N,D,T = x.shape      
-        x = x.permute([0, 2, 1])  
+        N,T,D = x.shape      
+        #x = x.permute([0, 2, 1])  
         encoder_output = self.encoder(x, src_padding_mask=None)
         encoder_output = self.act(encoder_output)
         decoder_input = x
@@ -87,9 +87,9 @@ class SeqTransformer(nn.Module):
 
 
 if __name__ == "__main__":
-    X = torch.randn(123,53,148)
-    model = SeqTransformer(53, 32, 1, 1, 148, 1)
-    model2 = SeqTransformer(53, 32, 1, 1, 148, 53, num_classes=8)
+    X = torch.randn(123, 148, 1348)
+    model = SeqTransformer(1348, 32, 1, 1, 148, 1)
+    #model2 = SeqTransformer(53, 32, 1, 1, 148, 53, num_classes=8)
     Yh = model(X)
-    Yh2 = model2(X)
-    print(Yh.shape, Yh2.shape)
+    #Yh2 = model2(X)
+    print(Yh.shape)

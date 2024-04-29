@@ -7,7 +7,7 @@ import json
 import glob
 
 parser = argparse.ArgumentParser("LSTM-BrainAge Plots")
-parser.add_argument("--experiment", default="SE0002_bl_ba")
+parser.add_argument("--experiment", default="SE0004_gru_ba")
 parser.add_argument("--result-dir", default="figures")
 parser.add_argument("--font-scale", default=2)
 #parser.add_argument(

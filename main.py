@@ -59,7 +59,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.devices
 # initialize criterion and optimizer
 criterion = args.criterion()
 
-if full_train_dataset is not None:
+if not args.inference_only and full_train_dataset is not None:
     sig = inspect.signature(args.optimizer)
     optim_kwargs = {k: v for k, v in json.loads(
         args.optim_kwargs).items() if k in sig.parameters.keys()}
