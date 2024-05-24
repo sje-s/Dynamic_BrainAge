@@ -9,13 +9,15 @@ Make sure you have needed dependencies, either by doing pip install
 ```
 pip install -r requirements.txt
 ```
+or better, creating a conda environment:
+```
+conda env create -f environment.yml
+```
 
 ## Running
 
-The example can be run by the following:
-```
-python example.py
-```
+
+**NOTE:** The examples are currently out of date, so using main.py is recommended until I find time to fix the examples.
 
 The full code can be run using main.py and the arguments below:
 

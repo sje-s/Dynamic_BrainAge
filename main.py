@@ -71,7 +71,8 @@ args.test_metrics = json.loads(args.test_metrics)
 
 # initialize criterion and optimizer
 criterion = args.criterion()
-
+os.makedirs(os.path.join(args.logdir, "logs"), exist_ok=True)
+os.makedirs(os.path.join(args.logdir, "checkpoints"), exist_ok=True)
 if full_train_dataset is not None:
     sig = inspect.signature(args.optimizer)
     optim_kwargs = {k: v for k, v in json.loads(
@@ -113,6 +114,7 @@ if full_train_dataset is not None:
     training_rows = []
     validation_rows = []
     best_loss = torch.inf
+    
     if not args.inference_only:
         for epoch in range(args.epochs):
             running_loss = []
@@ -161,7 +163,7 @@ if full_train_dataset is not None:
                 corr_mean=np.mean(running_corr),
                 corr_std=np.std(running_corr),
             ))
-            os.makedirs(os.path.join(args.logdir, "logs"), exist_ok=True)
+            
             pd.DataFrame(training_rows).to_csv(os.path.join(args.logdir, "logs", "train_full.csv"), index=False)
             pd.DataFrame(training_rows_accumulated).to_csv(os.path.join(args.logdir, "logs", "train.csv"), index=False)
             running_loss = []
@@ -241,6 +243,7 @@ if full_inference_dataset is not None:
     running_loss = []
     running_corr = []
     print("\n***Inference***\n")
+    step = 0
     with torch.no_grad():
         pbar = tqdm.tqdm(enumerate(test_loader))
         for batch_i, batch in pbar:
@@ -258,7 +261,7 @@ if full_inference_dataset is not None:
             if torch.isnan(corr).item():
                 corr = torch.Tensor([0.])
             test_rows.append(dict(step=step, 
-                                    epoch=epoch, 
+                                    epoch=0, 
                                     batch_index=batch_i, 
                                     loss=loss.item(), 
                                     corr=corr.item()))
@@ -273,7 +276,7 @@ if full_inference_dataset is not None:
                                                                                         running_corr[-1],
                                                                                         np.mean(running_corr),
                                                                                         np.std(running_corr)))
-        test_rows_accumulated.append(dict(epoch=epoch,
+        test_rows_accumulated.append(dict(epoch=0,
             loss_mean=np.mean(running_loss),
             loss_std=np.std(running_loss),
             corr_mean=np.mean(running_corr),
