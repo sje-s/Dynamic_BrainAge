@@ -1,7 +1,8 @@
-catalyst==21.2rc0
-numpy==1.26.2
-scikit_learn==1.2.1
-torch==1.11.0+cu113
+numpy
+scikit_learn
+torch
 mat73
-scipy==1.7.1
-pandas==1.5.3
+scipy
+pandas
+seaborn
+matplotlib

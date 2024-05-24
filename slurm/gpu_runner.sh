@@ -1,15 +1,16 @@
 #!/bin/bash
-#SBATCH -p qTRDGPU,qTRDGPUL,qTRDGPUM,qTRDGPUH
-#SBATCH --mem=20gb
-#SBATCH --gres=gpu:1
-#SBATCH -t 24:00:00
+#SBATCH -p qTRDGPUL,qTRDGPUM,qTRDGPUH
+#SBATCH --mem=32gb
+#SBATCH -c 12
+#SBATCH --gres=gpu:A100:1
+#SBATCH -t 48:00:00
 #SBATCH -A trends53c17
 #SBATCH --oversubscribe
 hostname
-ls /data/users3
-ls /data/collaboration
+#ls /data/users3
+#ls /data/collaboration
 echo ARGS "${@:1}"
 eval "$(conda shell.bash hook)"
-conda activate catalyst3.9
+conda activate brainage_ni24
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/data/users2/bbaker43/anaconda3/lib python main.py "${@:1}"
 
