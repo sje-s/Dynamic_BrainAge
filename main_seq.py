@@ -16,11 +16,14 @@ from dynamic_brainage.dataloaders.get_dataset import get_dataset
 from dynamic_brainage.dataloaders.CSVDataset import CSVDataset, get_subset
 from dynamic_brainage.models.get_model import get_model
 #from dynamic_brainage.defaults.default_args import DEFAULTS, HELP
-from dynamic_brainage.defaults.seq_args import DEFAULTS, HELP
+#from dynamic_brainage.defaults.seq_args import DEFAULTS, HELP
+from dynamic_brainage.defaults.testing import DEFAULTS, HELP
+
+
 import warnings
 warnings.filterwarnings("ignore")
 # Begin Argument Parsing
-parser = argparse.ArgumentParser("LSTM for BrainAge")
+parser = argparse.ArgumentParser("Dynamic Models for BrainAge")
 for key, val in DEFAULTS.items():
     parser.add_argument("--%s" % key, default=val,
                         type=type(val), help=HELP[key])

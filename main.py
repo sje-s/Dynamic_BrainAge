@@ -5,6 +5,7 @@ import json
 import tqdm
 import inspect
 import numpy as np
+import copy
 import pandas as pd
 
 from torch import nn, optim
@@ -16,7 +17,7 @@ from dynamic_brainage.dataloaders.get_dataset import get_dataset
 from dynamic_brainage.dataloaders.CSVDataset import CSVDataset, get_subset
 from dynamic_brainage.models.get_model import get_model
 from dynamic_brainage.defaults.default_args import DEFAULTS, HELP
-#from dynamic_brainage.defaults.testing import DEFAULTS, HELP
+from dynamic_brainage.defaults.testing import DEFAULTS, HELP
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -61,6 +62,8 @@ if args.test_dataset is not None:
         full_inference_dataset = get_dataset(args.test_dataset,
                                              *json.loads(args.test_dataset_args),
                                              **json.loads(args.test_dataset_kwargs))
+        
+        
 model = get_model(args.model, 
                   *json.loads(args.model_args),
                   **json.loads(args.model_kwargs)).to(device)
@@ -102,9 +105,10 @@ if full_train_dataset is not None:
         train_dataset = Subset(full_train_dataset, train_idx)
         valid_dataset = Subset(full_train_dataset, valid_idx)
     if args.test_dataset.lower() == "valid":
-        full_inference_dataset = valid_dataset
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=12, prefetch_factor=2, shuffle=True)
-    valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, num_workers=12, prefetch_factor=2, shuffle=True)
+        full_inference_dataset = copy.deepcopy(valid_dataset)
+    #full_inference_dataset = dataset_with_indices(full_inference_dataset)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=14, prefetch_factor=2, shuffle=True)
+    valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, num_workers=14, prefetch_factor=2, shuffle=True)
     # model training
     rows_batches = []
     rows_epochs = []
@@ -120,14 +124,14 @@ if full_train_dataset is not None:
             running_loss = []
             running_corr = []
             model.train()
-            pbar = tqdm.tqdm(enumerate(train_loader))
+            pbar = tqdm.tqdm(enumerate(train_loader), total=len(train_loader))
             print("\n***Training Epoch %d/%d***\n" % (epoch, args.epochs))
             for batch_i, batch in pbar:
                 optimizer.zero_grad()
                 for j, bi in enumerate(batch):
                     batch[j] = bi.to(device)
                 # for now assume tuple
-                x, y = batch
+                x, y, _ = batch
                 y = y.float()
                 yhat = model(x)
                 loss = criterion(yhat.view_as(y), y)
@@ -176,7 +180,7 @@ if full_train_dataset is not None:
                     for j, bi in enumerate(batch):
                         batch[j] = bi.to(device)
                     # for now assume tuple
-                    x, y = batch
+                    x, y, _ = batch
                     y = y.float()
                     yhat = model(x)
                     loss = criterion(yhat.view_as(y), y)
@@ -222,60 +226,65 @@ if full_train_dataset is not None:
                     os.path.join(args.logdir, "checkpoints", "best.pth")
                 )
                 best_loss = np.mean(running_loss)
+                print("Saved at epoch %d" % epoch)
 
 if full_inference_dataset is not None:
     test_loader = DataLoader(full_inference_dataset,
                              batch_size=args.batch_size, 
-                             shuffle=False, 
+                             shuffle=True, 
                              num_workers=12, 
                              prefetch_factor=2)
+    new_model = get_model(args.model, 
+                  *json.loads(args.model_args),
+                  **json.loads(args.model_kwargs)).to(device)
     test_rows_accumulated = []
     test_rows = []
     if "<EVAL>" in args.inference_model:
         args.inference_model = eval(args.inference_model.replace("<EVAL>",""))
     checkpoint = torch.load(args.inference_model)
-    model.load_state_dict(checkpoint['model_state_dict'])
+    new_model.load_state_dict(checkpoint['model_state_dict'])
+    new_model.eval()
     # add callbacks
     callbacks = []
-
+    all_indices = []
     all_predictions = []
     all_deltas = []
     running_loss = []
     running_corr = []
     print("\n***Inference***\n")
     step = 0
-    with torch.no_grad():
-        pbar = tqdm.tqdm(enumerate(test_loader))
-        for batch_i, batch in pbar:
-            for j, bi in enumerate(batch):
-                batch[j] = bi.to(device)
-            # for now assume tuple
-            x, y = batch
-            y = y.float()
-            yhat = model(x)
-            all_deltas.append((y-yhat.view_as(y)).detach().cpu().numpy())
-            all_predictions.append(yhat.detach().cpu().numpy())
-            loss = criterion(yhat.view_as(y), y)
-            stacked = torch.stack([yhat, y.view_as(yhat)], 0).squeeze()
-            corr = torch.corrcoef(stacked).flatten()[1]
-            if torch.isnan(corr).item():
-                corr = torch.Tensor([0.])
-            test_rows.append(dict(step=step, 
-                                    epoch=0, 
-                                    batch_index=batch_i, 
-                                    loss=loss.item(), 
-                                    corr=corr.item()))
-            running_loss.append(loss.item())
-            running_corr.append(corr.item())
-            step += 1        
-            pbar.set_description("%d/%d     Loss:%.6f     :%.4f+-%.3f     Corr:%.6f:%.4f±%.3f     " % (batch_i+1, 
-                                                                                        len(test_loader), 
-                                                                                        running_loss[-1], 
-                                                                                        np.mean(running_loss), 
-                                                                                        np.std(running_loss), 
-                                                                                        running_corr[-1],
-                                                                                        np.mean(running_corr),
-                                                                                        np.std(running_corr)))
+    pbar = tqdm.tqdm(enumerate(test_loader))
+    for batch_i, batch in pbar:
+        for j, bi in enumerate(batch):
+            batch[j] = bi.to(device)
+        # for now assume tuple
+        x, y, idx = batch
+        all_indices.append(idx.detach().cpu().numpy())
+        y = y.float()
+        yhat = new_model(x)
+        all_deltas.append((y-yhat.view_as(y)).detach().cpu().numpy())
+        all_predictions.append(yhat.detach().cpu().numpy())
+        loss = criterion(yhat.view_as(y), y)
+        stacked = torch.stack([yhat, y.view_as(yhat)], 0).squeeze()
+        corr = torch.corrcoef(stacked).flatten()[1]
+        if torch.isnan(corr).item():
+            corr = torch.Tensor([0.])
+        test_rows.append(dict(step=step, 
+                                epoch=0, 
+                                batch_index=batch_i, 
+                                loss=loss.item(), 
+                                corr=corr.item()))
+        running_loss.append(loss.item())
+        running_corr.append(corr.item())
+        step += 1        
+        pbar.set_description("%d/%d     Loss:%.6f     :%.4f+-%.3f     Corr:%.6f:%.4f±%.3f     " % (batch_i+1, 
+                                                                                    len(test_loader), 
+                                                                                    running_loss[-1], 
+                                                                                    np.mean(running_loss), 
+                                                                                    np.std(running_loss), 
+                                                                                    running_corr[-1],
+                                                                                    np.mean(running_corr),
+                                                                                    np.std(running_corr)))
         test_rows_accumulated.append(dict(epoch=0,
             loss_mean=np.mean(running_loss),
             loss_std=np.std(running_loss),
@@ -286,10 +295,14 @@ if full_inference_dataset is not None:
         pd.DataFrame(test_rows_accumulated).to_csv(os.path.join(args.logdir, "logs", "test.csv"), index=False)
     all_predictions = np.concatenate(all_predictions, 0)
     all_deltas = np.concatenate(all_deltas, 0)
+    all_indices = np.concatenate(all_indices, 0)
+    sidx = np.argsort(all_indices)
+    all_predictions = all_predictions[sidx]
+    all_deltas = all_deltas[sidx]
     predict_df = pd.DataFrame([dict(subject=sub,
                  session=ses,
                  label=l,
-                 prediction=p,
+                 prediction=p[0],
                  delta=d,
                  filepath=f) for (sub, ses, l, p, d, f) in zip(
                      full_inference_dataset.subjects,

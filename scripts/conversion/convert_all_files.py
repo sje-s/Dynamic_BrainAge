@@ -17,8 +17,8 @@ class ConvertData(Dataset):
                  #data_root="/data/qneuromark/Results/DFNC/UKBioBank",
                  #subj_form="%s", #"Sub%05d",
                  #data_file="UKB_dfnc_sub_001_sess_001_results.mat",
-                 age_csv="/data/users3/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths.csv",
-                #age_csv="/data/users3/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths_dFNC_sMRI_cogScores_v2.csv",
+                 #age_csv="/data/users3/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths.csv",
+                age_csv="/data/users3/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths_dFNC_sMRI_cogScores_v2.csv",
                 #  age_threshold=15
                 random=False
                  ):
@@ -94,12 +94,14 @@ if __name__ == "__main__":
     rows = []
     test_dataset = ConvertData(N_subs=22569)
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False)
-    for batch_i, (fnc, fname, age,session) in tqdm.tqdm(enumerate(test_dataloader)):
+    pbar = tqdm.tqdm(enumerate(test_dataloader), total=len(test_dataloader))
+    for batch_i, (fnc, fname, age,session) in pbar:
         #print(fnc.shape, fname[0])        
-        fname = os.path.basename(fname[0])
-        cfname = "/data/users3/bbaker/projects/LSTM_BrainAge/data/fnc/v1/" + fname + ".pt"
+        fname = fname[0].replace("/","-")[1:]
+        cfname = "/data/users3/bbaker/projects/Dynamic_BrainAge/data/fnc/v2/" + fname + ".pt"
         torch.save(fnc[0], cfname)
         rows.append(dict(old_filename=fname[0], new_filename=cfname, age=age, session=session))
         #break
+        pbar.update(1)
     df = pd.DataFrame(rows)
-    df.to_csv('./data/converted_files_v1.csv')
+    df.to_csv('./data/converted_files_v2.csv')

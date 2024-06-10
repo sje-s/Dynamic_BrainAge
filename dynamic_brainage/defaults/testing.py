@@ -1,13 +1,13 @@
 DEFAULTS = {
     "devices": "0",
     # passed to getattr from torch.nn
-    "criterion": "MSELoss",
+    "criterion": "L1Loss",
     # key passed to get_dataset
-    "train-dataset": "ukbhcp_v2",
+    "train-dataset": "ukbhcp_v2_sfnc",
     # args passed to get_dataset
     "train-dataset-args": "[]",
     # kwargs passed to get_dataset
-    "train-dataset-kwargs": '{"N_subs":17522}',
+    "train-dataset-kwargs": '{"N_subs": 17522, "N_timepoints":-1, "sequential": false}',
     # key passed to get dataset
     "test-dataset": "valid",
     # args passed to get dataset
@@ -15,27 +15,28 @@ DEFAULTS = {
     # kwargs passed to get dataset
     "test-dataset-kwargs": '[]',
     # key passed to get_model
-    "model": "convrnn",
+    "model": "mlp",
     # args passed to get_model
-    "model-args": '[448,1378]',
+    "model-args": '[]',
     # kwargs passed to get_model
-    "model-kwargs": '{}',
+    "model-kwargs": '{"m_in":1378,"m_out":1,"h":[1024,512,256,128,64,32,16,8,4,2],"hidden_activation":"relu"}',
     "inference-model": "<EVAL>os.path.join(args.logdir,'checkpoints','best.pth')",
     # passed to getattr from torch.optim
     "optimizer": "Adam",
     "optim-kwargs": '{"rho": 1e-6, "betas": [0.9, 0.9999]}',
-    "batch-size": 64,
-    "lr": 1e-3,
-    "weight-decay": 0,
+    "batch-size": 5,
+    "lr": 2e-5,
+    "weight-decay": 1.0,
     "num-folds": 10,
-    "epochs": 10,
-    "train-metrics": '["loss","correlation"]',     # json parsed
-    "test-metrics": '["loss","correlation"]',
+    "epochs": 3,
+    "train-metrics": '["loss"]',     # json parsed
+    "test-metrics": '["loss"]',
     "seed": 314159,
-    "logdir": "logs/test",
+    "logdir": "logs/seq_test",
     "k": 0,
     "inference-only": False,
-    "scheduler": None,
+    "scheduler": "CosineAnnealingLR",
+    "scheduler-args": "[500]",
     "scheduler-kwargs": "{}"
 }
 
@@ -66,5 +67,6 @@ HELP = {
     "logdir": "The logging directory, where results are saved (created upon runtime)",
     "inference-only": "Only use the inference model. Do not train",
     "scheduler": "Learning Rate Scheduler",
+    "scheduler-args": "Args for scheduler",
     "scheduler-kwargs": "Keyword arguments for scheduler"
 }

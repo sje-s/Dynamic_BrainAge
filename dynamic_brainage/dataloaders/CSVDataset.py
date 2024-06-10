@@ -73,7 +73,8 @@ class CSVDataset(Dataset):
             file_df = full_data
         full_data[subject_key] = full_data[subject_key].astype(str)
         file_df[subject_key] = file_df[subject_key].astype(str)
-        unique_subjects = full_data[subject_key].unique()
+        unique_subjects = list(set(full_data[subject_key].unique()).intersection(
+            file_df[subject_key].unique().tolist()))
         self.N_subjects = min(self.N_subjects, len(unique_subjects))
         unique_sessions = full_data[session_key].unique()
         if idx is not None and index_by_subject:
@@ -116,11 +117,14 @@ class CSVDataset(Dataset):
         if os.path.splitext(filepath)[-1] == ".pt":
             #filepath = self.converted['new_filename'].iloc[k]
             data = torch.load(filepath)
-            dfnc = data[:self.seqlen,:].float()
+            if self.seqlen is not None and self.seqlen != -1:
+                dfnc = data[:self.seqlen,:].float()
+            else:
+                dfnc = data.float()            
             if self.sequential:
                 label = self.labels[k]
-                return dfnc, torch.full((self.seqlen,), label).to(dfnc.device)
-            return dfnc, self.labels[k]
+                return dfnc, torch.full((self.seqlen,), label).to(dfnc.device), k
+            return dfnc, self.labels[k], k
         else:
             try:
                 data = mat73.loadmat(filepath)
@@ -129,7 +133,7 @@ class CSVDataset(Dataset):
             dfnc = data['FNCdyn'][:self.seqlen,:].astype('float32')
             if self.sequential:
                 return torch.from_numpy(dfnc), torch.full(self.seqlen, torch.from_numpy(self.label[k]).item())
-            return torch.from_numpy(dfnc), torch.from_numpy(self.labels[k])            
+            return torch.from_numpy(dfnc), torch.from_numpy(self.labels[k]), k            
 
 if __name__ == "__main__":
     from torch.utils.data import DataLoader

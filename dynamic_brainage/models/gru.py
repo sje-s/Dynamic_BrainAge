@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class BiGRU(nn.Module):
 
-    def __init__(self, seqlen, dim, hidden_size=128, bidirectional=True, drp=0.1, num_layers=1):
+    def __init__(self, seqlen, dim, hidden_size=128, bidirectional=True, drp=0.1, num_layers=3):
         """
         Seqlen - length of the sequence
         Dim - dimension of the input sequence

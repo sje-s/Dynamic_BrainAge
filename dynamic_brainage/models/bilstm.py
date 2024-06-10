@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class BiLSTM(nn.Module):
 
-    def __init__(self, seqlen, dim, hidden_size=128, bidirectional=True, drp=0., num_layers=3):
+    def __init__(self, seqlen, dim, hidden_size=128, bidirectional=True, drp=0.1, num_layers=3):
         """
         Seqlen - length of the sequence
         Dim - dimension of the input sequence
@@ -15,6 +15,7 @@ class BiLSTM(nn.Module):
         self.hidden_size = hidden_size
         self.lstm = nn.LSTM(dim, self.hidden_size, num_layers=num_layers,
                             bidirectional=bidirectional, batch_first=True)
+        self.batchnorm = nn.BatchNorm1d(seqlen)
         self.linear = nn.Linear(seqlen*hidden_size*2, hidden_size)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(drp)
@@ -22,6 +23,7 @@ class BiLSTM(nn.Module):
 
     def forward(self, x):
         h_lstm, _ = self.lstm(x)
+        h_lstm = self.batchnorm(h_lstm)
         h_flat = torch.flatten(h_lstm, 1)
         out = self.relu(self.linear(h_flat))
         out = self.dropout(out)

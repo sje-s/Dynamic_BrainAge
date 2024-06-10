@@ -28,7 +28,7 @@ DEFAULTS = {
     "lr": 1e-3,
     "weight-decay": 0,
     "num-folds": 10,
-    "epochs": 10,
+    "epochs": 1,
     "train-metrics": '["loss","correlation"]',     # json parsed
     "test-metrics": '["loss","correlation"]',
     "seed": 314159,

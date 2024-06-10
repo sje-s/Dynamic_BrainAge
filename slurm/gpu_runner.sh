@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -p qTRDGPUL,qTRDGPUM,qTRDGPUH
-#SBATCH --mem=32gb
+#SBATCH --mem=64gb
 #SBATCH -c 12
 #SBATCH --gres=gpu:A100:1
 #SBATCH -t 48:00:00
