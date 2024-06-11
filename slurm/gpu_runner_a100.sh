@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH -p qTRDGPU
-#SBATCH --mem=256gb
+#SBATCH -p qTRDGPUL,qTRDGPUM,qTRDGPUH
+#SBATCH --mem=300gb
 #SBATCH -c 16
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:A100:1
 #SBATCH -t 48:00:00
 #SBATCH -A trends53c17
 #SBATCH --oversubscribe

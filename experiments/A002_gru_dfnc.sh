@@ -1,29 +1,29 @@
 #!/bin/bash
-experiment_name="M003_feng_smri"
+experiment_name="A002_gru_dfnc"
 criterion_=( "L1Loss" )
-train_dataset_=( "ukbhcp_v2_smri" )
+train_dataset_=( "ukbhcp_v2" )
 train_dataset_args_=( "[]" )
-train_dataset_kwargs_=( '{"N_subs":17522}' )
+train_dataset_kwargs_=( '{"N_subs":17522,"N_timepoints":448}' )
 test_dataset_=( "valid" )
 test_dataset_args_=( "[]" )
 test_dataset_kwargs_=( "{}" )
-model_=( "conv3d" )
-model_args_=( "[[1,1,121,145,121],1]" )
-model_kwargs_=( '{"hidden_neurons":[4,8,16,32,64],"hidden_neurons_linear":[]}' )
+model_=( "bigru" )
+model_args_=( "[448,1378]" )
+model_kwargs_=( '{}' )
 inference_model_=( "<EVAL>os.path.join(args.logdir,'checkpoints','best.pth')" )
 scheduler_=( "none" )
 scheduler_args_=( "[]" )
 scheduler_kwargs_=( "{}" )
 optimizer_=( "Adam" )
 optim_kwargs_=( "{}" )
-batch_size_=( "10" )
-lr_=( "2e-5" )
+batch_size_=( "64" )
+lr_=( "1e-3" )
 weight_decay_=( "1.0" )
 num_folds_=( "5" )
 epoch_=( "10" )
 train_metrics_=( '["loss"]' )
 test_metrics_=( '["loss"]' )
-seed_=( "314159" )
+seed_=( "1" )
 k_=( 0 1 2 3 4 )
 run=0
 for criterion in "${criterion_[@]}"; do
@@ -51,7 +51,7 @@ for train_metrics in "${train_metrics_[@]}"; do
 for test_metrics in "${test_metrics_[@]}"; do
 for seed in "${seed_[@]}"; do 
 for k in "${k_[@]}"; do 
-args=""
+args=" --num-workers 8 --prefetch-factor 2 "
 args=$args"--criterion "$criterion" "
 args=$args"--train-dataset "$train_dataset" "
 args=$args"--train-dataset-args "$train_dataset_args" "

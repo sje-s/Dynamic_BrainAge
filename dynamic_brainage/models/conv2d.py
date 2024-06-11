@@ -53,6 +53,7 @@ class CNN2D(nn.Module):
                  dilations=[],
                  hidden_neurons_linear=[],
                  flatten=False,
+                 maxpool_after=False,
                  bias=True):
         """Standard 3DCNN with
         """
@@ -60,7 +61,7 @@ class CNN2D(nn.Module):
         self.layers = nn.ModuleList()
         if flatten:
             self.layers.append(nn.Flatten(1))
-        hidden_neurons.append(output_dim)
+        hidden_neurons_linear.append(output_dim)
         kernels = resolve_lists(kernels, hidden_neurons, DEFAULT_KERNEL)
         strides = resolve_lists(strides, hidden_neurons, DEFAULT_KERNEL)
         paddings = resolve_lists(paddings, hidden_neurons, DEFAULT_PADDING)
@@ -79,6 +80,10 @@ class CNN2D(nn.Module):
             else:
                 if output_activation is not None:
                     self.layers.append(output_activation())
+                if maxpool_after:
+                    layer = nn.MaxPool2d(kernels[i],stride=strides[i],padding=paddings[i],dilation=dilations[i])
+                    hin, win = next_2dCNN_shape(in0, hin, win, kernels[i], strides[i], paddings[i], dilations[i])
+                    self.layers.append(layer)
             hin, win = next_2dCNN_shape(in0, hin, win,
                                         kernels[i], strides[i],
                                         paddings[i], dilations[i])
@@ -98,6 +103,8 @@ class CNN2D(nn.Module):
             in0 = h0
 
     def forward(self, x):
+        if len(x.shape) == 3:
+            x = x.view(x.shape[0],1,x.shape[1],x.shape[2])
         for layer in self.layers:
             x = layer(x)
         return x
@@ -105,13 +112,13 @@ class CNN2D(nn.Module):
 
 if __name__ == "__main__":
     import tqdm
-    X1 = torch.randn(256, 1, 64, 64)*1 + 1
-    X2 = torch.rand(256, 1, 64, 64)*1 - 1
-    Y1 = torch.zeros((256,))
-    Y2 = torch.ones((256,))
+    X1 = torch.randn(64, 1, 448, 1378)*1 + 1
+    X2 = torch.rand(64, 1, 448, 1378)*1 - 1
+    Y1 = torch.zeros((64,))
+    Y2 = torch.ones((64,))
     Xs = torch.cat([X1, X2], 0)
     Ys = torch.cat([Y1, Y2], 0)
-    model = CNN2D((256, 1, 64, 64), 2, hidden_neurons=[2, 3],
+    model = CNN2D((64, 1, 448, 1378), 2, hidden_neurons=[2, 3],
                   hidden_neurons_linear=[128, 64, 32, 16, 8, 4])
     opt = torch.optim.Adam(model.parameters(), lr=1e-4)
     pbar = tqdm.tqdm(range(100))

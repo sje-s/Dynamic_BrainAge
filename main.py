@@ -7,14 +7,16 @@ import inspect
 import numpy as np
 import copy
 import pandas as pd
-
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
 from torch import nn, optim
 from torch.utils.data import DataLoader, Subset
 
 from sklearn.model_selection import KFold
 
-from dynamic_brainage.dataloaders.get_dataset import get_dataset
+from dynamic_brainage.dataloaders.get_dataset import get_dataset, get_ramset
 from dynamic_brainage.dataloaders.CSVDataset import CSVDataset, get_subset
+from dynamic_brainage.dataloaders.CSVDataset_preload import RAMDataset, get_ram_subset
 from dynamic_brainage.models.get_model import get_model
 from dynamic_brainage.defaults.default_args import DEFAULTS, HELP
 from dynamic_brainage.defaults.testing import DEFAULTS, HELP
@@ -51,17 +53,19 @@ if args.scheduler is not None:
     else:
         args.scheduler = None
 # Resolve dataset and model
+print("Loading train data...")
 full_train_dataset = None
 if args.train_dataset is not None:
-    full_train_dataset = get_dataset(args.train_dataset,
+    full_train_dataset = get_ramset(args.train_dataset,
                                      *json.loads(args.train_dataset_args),
-                                     **json.loads(args.train_dataset_kwargs))
+                                     **json.loads(args.train_dataset_kwargs),device=device)
 full_inference_dataset = None
 if args.test_dataset is not None:
+    print("Loading inference data....")
     if args.test_dataset.lower() != "valid":
-        full_inference_dataset = get_dataset(args.test_dataset,
+        full_inference_dataset = get_ramset(args.test_dataset,
                                              *json.loads(args.test_dataset_args),
-                                             **json.loads(args.test_dataset_kwargs))
+                                             **json.loads(args.test_dataset_kwargs),device=device)
         
         
 model = get_model(args.model, 
@@ -99,16 +103,23 @@ if full_train_dataset is not None:
         if k == args.k:
             break
     if isinstance(full_train_dataset, CSVDataset):
+        print("Getting train CSV subset...")
         train_dataset = get_subset(full_train_dataset, train_idx)
+        print("Getting valid CSV subset...")
         valid_dataset = get_subset(full_train_dataset, valid_idx)
+    elif isinstance(full_train_dataset, RAMDataset):
+        print("Getting train RAM subset...")
+        train_dataset = get_ram_subset(full_train_dataset, train_idx)
+        print("Getting valid RAM subset...")
+        valid_dataset = get_ram_subset(full_train_dataset, valid_idx)
     else:
         train_dataset = Subset(full_train_dataset, train_idx)
         valid_dataset = Subset(full_train_dataset, valid_idx)
     if args.test_dataset.lower() == "valid":
         full_inference_dataset = copy.deepcopy(valid_dataset)
     #full_inference_dataset = dataset_with_indices(full_inference_dataset)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=14, prefetch_factor=2, shuffle=True)
-    valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, num_workers=14, prefetch_factor=2, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, prefetch_factor=args.prefetch_factor, shuffle=True)
+    valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, num_workers=args.num_workers, prefetch_factor=args.prefetch_factor, shuffle=True)
     # model training
     rows_batches = []
     rows_epochs = []
@@ -226,14 +237,14 @@ if full_train_dataset is not None:
                     os.path.join(args.logdir, "checkpoints", "best.pth")
                 )
                 best_loss = np.mean(running_loss)
-                print("Saved at epoch %d" % epoch)
+                print("Saved at epoch %d" % epoch)    
 
 if full_inference_dataset is not None:
     test_loader = DataLoader(full_inference_dataset,
                              batch_size=args.batch_size, 
                              shuffle=True, 
-                             num_workers=12, 
-                             prefetch_factor=2)
+                             num_workers=args.num_workers, 
+                             prefetch_factor=args.prefetch_factor)
     new_model = get_model(args.model, 
                   *json.loads(args.model_args),
                   **json.loads(args.model_kwargs)).to(device)

@@ -4,3 +4,4 @@ data/*.pt
 data/*
 .vscode/
 *.code-workspace
+pymp*

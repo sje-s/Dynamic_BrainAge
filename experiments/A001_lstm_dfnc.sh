@@ -1,28 +1,33 @@
 #!/bin/bash
-experiment_name="RE0001_first_model"
-criterion_=( "MSELoss" )
+experiment_name="A001_lstm_dfnc"
+criterion_=( "L1Loss" )
 train_dataset_=( "ukbhcp_v2" )
 train_dataset_args_=( "[]" )
-train_dataset_kwargs_=( '{"N_subs":10000}' )
+train_dataset_kwargs_=( '{"N_subs":17522,"N_timepoints":448}' )
 test_dataset_=( "valid" )
 test_dataset_args_=( "[]" )
 test_dataset_kwargs_=( "{}" )
 model_=( "bilstm" )
 model_args_=( "[448,1378]" )
-model_kwargs_=( "{}" )
-inference_model_=( "model.best.pth" )
+model_kwargs_=( '{}' )
+inference_model_=( "<EVAL>os.path.join(args.logdir,'checkpoints','best.pth')" )
+scheduler_=( "none" )
+scheduler_args_=( "[]" )
+scheduler_kwargs_=( "{}" )
 optimizer_=( "Adam" )
 optim_kwargs_=( "{}" )
 batch_size_=( "64" )
-lr_=( "1e-6" )
-weight_decay_=( "0" )
-num_folds_=( "10" )
-epoch_=( "1000" )
-train_metrics_=( '["loss","correlation"]' )
-test_metrics_=( '["loss","correlation"]' )
-seed_=( "314159" )
-k_=( 0 1 2 3 4 5 6 7 8 9 )
+lr_=( "1e-3" )
+weight_decay_=( "1.0" )
+num_folds_=( "5" )
+epoch_=( "10" )
+train_metrics_=( '["loss"]' )
+test_metrics_=( '["loss"]' )
+seed_=( "1" )
+k_=( 0 1 2 3 4 )
 run=0
+#eval "$(conda shell.bash hook)"
+#conda activate brainage_ni24
 for criterion in "${criterion_[@]}"; do
 for train_dataset in "${train_dataset_[@]}"; do 
 for train_dataset_args in "${train_dataset_args_[@]}"; do 
@@ -39,13 +44,16 @@ for optim_kwargs in "${optim_kwargs_[@]}"; do
 for batch_size in "${batch_size_[@]}"; do 
 for lr in "${lr_[@]}"; do 
 for weight_decay in "${weight_decay_[@]}"; do
+for scheduler in "${scheduler_[@]}"; do
+for scheduler_args in "${scheduler_args_[@]}"; do
+for scheduler_kwargs in "${scheduler_kwargs_[@]}"; do
 for num_folds in "${num_folds_[@]}"; do 
 for epoch in "${epoch_[@]}"; do 
 for train_metrics in "${train_metrics_[@]}"; do 
 for test_metrics in "${test_metrics_[@]}"; do
 for seed in "${seed_[@]}"; do 
 for k in "${k_[@]}"; do 
-args=""
+args=" --num-workers 8 --prefetch-factor 2 "
 args=$args"--criterion "$criterion" "
 args=$args"--train-dataset "$train_dataset" "
 args=$args"--train-dataset-args "$train_dataset_args" "
@@ -66,11 +74,17 @@ args=$args"--num-folds "$num_folds" "
 args=$args"--epoch "$epoch" "
 args=$args"--train-metrics "$train_metrics" "
 args=$args"--test-metrics "$test_metrics" "
+args=$args"--scheduler "$scheduler" "
+args=$args"--scheduler-args "$scheduler_args" "
+args=$args"--scheduler-kwargs "$scheduler_kwargs" "
 args=$args"--seed "$seed" "
 args=$args"--k "$k" "
 logdir="logs/"$experiment_name"/run_"$run
 args=$args"--logdir "$logdir" "
 sbatch -J $experiment_name"-"$run -e "slurm/logs/"$experiment_name"-"$run".err" -o "slurm/logs/"$experiment_name"-"$run".out" slurm/gpu_runner.sh $args
+#LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/data/users2/bbaker43/anaconda3/lib python main.py $args &
+#echo $args
+
 run=$((run+1))
 done
 done
@@ -89,6 +103,9 @@ done
 done
 done
 done 
+done
+done
+done
 done
 done
 done

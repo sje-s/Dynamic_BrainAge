@@ -1,29 +1,29 @@
 #!/bin/bash
-experiment_name="E001_static"
-criterion_=( "MSELoss" )
+experiment_name="A005_trans_dfnc"
+criterion_=( "L1Loss" )
 train_dataset_=( "ukbhcp_v2" )
 train_dataset_args_=( "[]" )
-train_dataset_kwargs_=( '{"N_subs":17522,"N_timepoints":448}' )
+train_dataset_kwargs_=( '{"N_subs":17522,"N_timepoints":448,"sequential":false}' )
 test_dataset_=( "valid" )
 test_dataset_args_=( "[]" )
 test_dataset_kwargs_=( "{}" )
-model_=( "bilstm" "bigru" "conv1d" "convrnn" "convrnn_transpose" )
+model_=( "transformer" )
 model_args_=( "[448,1378]" )
-model_kwargs_=( '{}' )
+model_kwargs_=( '{"hidden_size":128,"nhead":13}' )
 inference_model_=( "<EVAL>os.path.join(args.logdir,'checkpoints','best.pth')" )
-scheduler_=( "CosineAnnealingLR" )
-scheduler_args_=( "[100]" )
+scheduler_=( "none" )
+scheduler_args_=( "[]" )
 scheduler_kwargs_=( "{}" )
 optimizer_=( "Adam" )
 optim_kwargs_=( "{}" )
 batch_size_=( "64" )
-lr_=( "1e-6" )
-weight_decay_=( "0" )
+lr_=( "1e-3" )
+weight_decay_=( "1.0" )
 num_folds_=( "5" )
-epoch_=( "200" )
+epoch_=( "10" )
 train_metrics_=( '["loss"]' )
 test_metrics_=( '["loss"]' )
-seed_=( "314159" )
+seed_=( "1" )
 k_=( 0 1 2 3 4 )
 run=0
 for criterion in "${criterion_[@]}"; do
@@ -51,7 +51,7 @@ for train_metrics in "${train_metrics_[@]}"; do
 for test_metrics in "${test_metrics_[@]}"; do
 for seed in "${seed_[@]}"; do 
 for k in "${k_[@]}"; do 
-args=""
+args=" --num-workers 8 --prefetch-factor 2 "
 args=$args"--criterion "$criterion" "
 args=$args"--train-dataset "$train_dataset" "
 args=$args"--train-dataset-args "$train_dataset_args" "

@@ -3,11 +3,11 @@ DEFAULTS = {
     # passed to getattr from torch.nn
     "criterion": "L1Loss",
     # key passed to get_dataset
-    "train-dataset": "ukbhcp_v2_sfnc",
+    "train-dataset": "ukbhcp_v2_tc_static",
     # args passed to get_dataset
     "train-dataset-args": "[]",
     # kwargs passed to get_dataset
-    "train-dataset-kwargs": '{"N_subs": 17522, "N_timepoints":-1, "sequential": false}',
+    "train-dataset-kwargs": '{"N_subs": 17522, "N_timepoints":448, "sequential": false}',
     # key passed to get dataset
     "test-dataset": "valid",
     # args passed to get dataset
@@ -15,11 +15,11 @@ DEFAULTS = {
     # kwargs passed to get dataset
     "test-dataset-kwargs": '[]',
     # key passed to get_model
-    "model": "bcgcn",
+    "model": "bilstm",
     # args passed to get_model
-    "model-args": '[16,16,16,64,256]',
+    "model-args": '[448,53]',
     # kwargs passed to get_model
-    "model-kwargs": '{}',
+    "model-kwargs": '{"hidden_size":128,"num_layers":3}',
     "inference-model": "<EVAL>os.path.join(args.logdir,'checkpoints','best.pth')",
     # passed to getattr from torch.optim
     "optimizer": "Adam",
@@ -27,7 +27,7 @@ DEFAULTS = {
     "batch-size": 64,
     "lr": 2e-5,
     "weight-decay": 1.0,
-    "num-folds": 5,
+    "num-folds": 10,
     "epochs": 3,
     "train-metrics": '["loss"]',     # json parsed
     "test-metrics": '["loss"]',
@@ -35,12 +35,10 @@ DEFAULTS = {
     "logdir": "logs/seq_test",
     "k": 0,
     "inference-only": False,
-    "scheduler": "none",
-    "scheduler-args": "[]",
+    "scheduler": "CosineAnnealingLR",
+    "scheduler-args": "[500]",
     "scheduler-kwargs": "{}",
     "pad-length": -1,
-    "num-workers": 8,
-    "prefetch-factor":4
 }
 
 HELP = {
@@ -72,7 +70,5 @@ HELP = {
     "scheduler": "Learning Rate Scheduler",
     "scheduler-args": "Args for scheduler",
     "scheduler-kwargs": "Keyword arguments for scheduler",
-    "pad-length": "Length of sequence for padding",
-    "num-workers": "Number of jobs for loading",
-    "prefetch-factor": "Prefetch factor"
+    "pad-length": "Length of sequence for padding"
 }

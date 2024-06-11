@@ -52,6 +52,7 @@ class CNN1D(nn.Module):
                  dilations=[],
                  hidden_neurons_linear=[128],
                  flatten=False,
+                 maxpool_after=False,
                  bias=True):
         """Standard 3DCNN with
         """
@@ -76,6 +77,10 @@ class CNN1D(nn.Module):
             else:
                 if output_activation is not None:
                     self.layers.append(output_activation())
+                if maxpool_after:
+                    layer = nn.MaxPool1d(kernels[i],stride=strides[i],padding=paddings[i],dilation=dilations[i])
+                    hin = next_1dCNN_shape(in0, hin, kernels[i], strides[i], paddings[i], dilations[i])
+                    self.layers.append(layer)
             hin = next_1dCNN_shape(in0, hin,
                                    kernels[i], strides[i],
                                    paddings[i], dilations[i])
@@ -103,14 +108,14 @@ class CNN1D(nn.Module):
 
 if __name__ == "__main__":
     import tqdm
-    X1 = torch.randn(256, 1, 64)*1 + 1
-    X2 = torch.rand(256, 1, 64)*1 - 1
-    Y1 = torch.zeros((256,))
-    Y2 = torch.ones((256,))
+    X1 = torch.randn(64, 448, 1378)*1 + 1
+    X2 = torch.rand(64, 448, 1378)*1 - 1
+    Y1 = torch.zeros((64,))
+    Y2 = torch.ones((64,))
     Xs = torch.cat([X1, X2], 0)
     Ys = torch.cat([Y1, Y2], 0)
-    model = CNN1D((256, 1, 64), 2, hidden_neurons=[2, 3],
-                  hidden_neurons_linear=[128, 64, 32, 16, 8, 4])
+    model = CNN1D(448,1378, output_dim=1, hidden_neurons=[1024,512,256],
+                  hidden_neurons_linear=[])
     opt = torch.optim.Adam(model.parameters(), lr=1e-4)
     pbar = tqdm.tqdm(range(100))
     for epoch in pbar:
