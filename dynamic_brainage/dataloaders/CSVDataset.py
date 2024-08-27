@@ -29,9 +29,7 @@ class CSVDataset(Dataset):
                 filename_key='new_filename',
                 classification=False,
                 idx=None,
-                index_by_subject=True,
-                use_triu=True,
-                device="cpu"
+                index_by_subject=True
                  ):
         """DevData - Load FNCs for UKBiobank
         KWARGS:
@@ -57,9 +55,7 @@ class CSVDataset(Dataset):
         classification=classification,
         idx=idx,
         index_by_subject=index_by_subject)
-        self.N_subjects = N_subs    
-        self.N_components = N_components
-        self.use_triu = use_triu    
+        self.N_subjects = N_subs        
         if idx is not None:
             self.N_subjects = min(len(idx), self.N_subjects)            
         # Compute the size of the upper-triangle in the FNC matrix
@@ -68,7 +64,6 @@ class CSVDataset(Dataset):
         # These variables are useful for properly defining the RNN used
         self.dim = upper_triangle_size
         self.seqlen = N_timepoints
-        self.device = device
         # Load demographic data (small enough to keep in memory)
         self.sequential = sequential
         full_data = pd.read_csv(age_csv)
@@ -119,36 +114,16 @@ class CSVDataset(Dataset):
             and using mat73 to load data
         """        
         filepath = self.file_paths[k]
-        if 'spectrogram' in filepath:
-            data = torch.load(filepath)
-            if self.seqlen is not None:
-                S = min(self.seqlen, data.shape[-1])  
-                data = data[:,:,:S]
-            if self.sequential:
-                label = self.labels[k]
-                return data, torch.full((self.seqlen,), label).to(dfnc.device), k
-            return data.permute([2,1,0]).float(), self.labels[k], k
-        elif os.path.splitext(filepath)[-1] == ".pt":
+        if os.path.splitext(filepath)[-1] == ".pt":
             #filepath = self.converted['new_filename'].iloc[k]
-            data = torch.load(filepath)            
+            data = torch.load(filepath)
             if self.seqlen is not None and self.seqlen != -1:
-                data = data.squeeze()
-                S = min(self.seqlen, data.shape[0])
-                dfnc = torch.zeros((self.seqlen,*data.shape[1:]))
-                dfnc[:S,...] = data[:S,...].float()
+                dfnc = data[:self.seqlen,:].float()
             else:
                 dfnc = data.float()            
             if self.sequential:
                 label = self.labels[k]
-                try:
-                    dfnc = torch.from_numpy(dfnc).to(self.device)
-                except Exception:
-                    pass
                 return dfnc, torch.full((self.seqlen,), label).to(dfnc.device), k
-            try:
-                dfnc = torch.from_numpy(dfnc).to(self.device)
-            except Exception:
-                pass
             return dfnc, self.labels[k], k
         else:
             try:

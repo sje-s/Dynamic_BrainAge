@@ -36,9 +36,6 @@ def get_dataset(key, *args, **kwargs):
                           age_csv="/data/users3/mduda/scripts/brainAge/HCP_HCPA_UKB_age_filepaths_dFNC_sMRI_cogScores_v2.csv",
                           converted_csv="/data/users3/bbaker/projects/Dynamic_BrainAge/data/tc_static.csv",
                           **kwargs)
-    elif key.lower() == "fbirn":
-        return MatLoader(dataLocation="/data/neuromark2/Results/DFNC/FBIRN/FBIRN_DFNC_only.mat",
-                         ageLocation="/data/neuromark2/Results/DFNC/FBIRN/FBIRN_DFNC_only.mat")
     elif key.lower() == "fbirnfront":
         return MatLoader(dataLocation="/home/users/sedwardsswart/Documents/DFNC/Dynamic_BrainAge-master/paddedFrontFBIRN.mat",
                          ageLocation="/data/neuromark2/Results/DFNC/FBIRN/FBIRN_DFNC_only.mat")
@@ -48,19 +45,6 @@ def get_dataset(key, *args, **kwargs):
     elif key.lower() == "fbirnboth":
         return MatLoader(dataLocation="/home/users/sedwardsswart/Documents/DFNC/Dynamic_BrainAge-master/paddedBothFBIRN.mat",
                          ageLocation="/data/neuromark2/Results/DFNC/FBIRN/FBIRN_DFNC_only.mat")
-    elif key.lower() == "mdd":
-        return MatLoader(dataLocation="/home/users/sedwardsswart/Documents/DFNC/MDD_data.mat",
-                         dataVar="FNCs",
-                         ageLocation="/home/users/sedwardsswart/Documents/DFNC/MDD_Demos.mat",
-                         ageVar="Demo",
-                         ageCol=3)
-    elif key.lower() == "mddc":
-        return MatLoader(dataLocation="/home/users/sedwardsswart/Documents/DFNC/MDD_data.mat",
-                         dataVar="FNCs",
-                         ageLocation="/home/users/sedwardsswart/Documents/DFNC/MDD_Demos.mat",
-                         ageVar="Demo",
-                         ageCol=3,
-                         inds="True")
     elif key.lower() == "mddfront":
         return MatLoader(dataLocation="/home/users/sedwardsswart/Documents/DFNC/MDD_data.mat",
                          dataVar="FNCs",
@@ -82,33 +66,13 @@ def get_dataset(key, *args, **kwargs):
                          ageVar="Demo",
                          ageCol=3,
                          typ="both")
-    elif key.lower() == "ptsd":
-        return MatLoader(dataLocation="/home/users/sedwardsswart/Documents/DFNC/AuroraData.mat",
-                         dataVar="FNCs",
-                         ageLocation="/home/users/sedwardsswart/Documents/DFNC/for_Sabrina_Age_project.mat",
-                         ageVar="demogrmod",
-                         ageCol=3)
     elif key.lower() == "ptsdfront":
-        return MatLoader(dataLocation="/home/users/sedwardsswart/Documents/DFNC/AuroraData.mat",
+        return MatLoader(dataLocation="/home/users/sedwardsswart/Documents/DFNC/for_Sabrina_Age_project.mat",
                          dataVar="FNCs",
                          ageLocation="/home/users/sedwardsswart/Documents/DFNC/for_Sabrina_Age_project.mat",
-                         ageVar="demogrmod",
+                         ageVar="Demo",
                          ageCol=3,
                          typ="front")
-    elif key.lower() == "ptsdback":
-        return MatLoader(dataLocation="/home/users/sedwardsswart/Documents/DFNC/AuroraData.mat",
-                         dataVar="FNCs",
-                         ageLocation="/home/users/sedwardsswart/Documents/DFNC/for_Sabrina_Age_project.mat",
-                         ageVar="demogrmod",
-                         ageCol=3,
-                         typ="back")
-    elif key.lower() == "ptsdboth":
-        return MatLoader(dataLocation="/home/users/sedwardsswart/Documents/DFNC/AuroraData.mat",
-                         dataVar="FNCs",
-                         ageLocation="/home/users/sedwardsswart/Documents/DFNC/for_Sabrina_Age_project.mat",
-                         ageVar="demogrmod",
-                         ageCol=3,
-                         typ="both")
     #elif key.lower() == "cadasil":
     #    return CadasilData(*args, **kwargs)
 

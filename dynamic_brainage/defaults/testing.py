@@ -15,19 +15,19 @@ DEFAULTS = {
     # kwargs passed to get dataset
     "test-dataset-kwargs": '[]',
     # key passed to get_model
-    "model": "bcgcn",
+    "model": "mlp",
     # args passed to get_model
-    "model-args": '[16,16,16,64,256]',
+    "model-args": '[]',
     # kwargs passed to get_model
-    "model-kwargs": '{}',
+    "model-kwargs": '{"m_in":1378,"m_out":1,"h":[1024,512,256,128,64,32,16,8,4,2],"hidden_activation":"relu"}',
     "inference-model": "<EVAL>os.path.join(args.logdir,'checkpoints','best.pth')",
     # passed to getattr from torch.optim
     "optimizer": "Adam",
     "optim-kwargs": '{"rho": 1e-6, "betas": [0.9, 0.9999]}',
-    "batch-size": 64,
+    "batch-size": 5,
     "lr": 2e-5,
     "weight-decay": 1.0,
-    "num-folds": 5,
+    "num-folds": 10,
     "epochs": 3,
     "train-metrics": '["loss"]',     # json parsed
     "test-metrics": '["loss"]',
@@ -35,12 +35,9 @@ DEFAULTS = {
     "logdir": "logs/seq_test",
     "k": 0,
     "inference-only": False,
-    "scheduler": "none",
-    "scheduler-args": "[]",
-    "scheduler-kwargs": "{}",
-    "pad-length": -1,
-    "num-workers": 8,
-    "prefetch-factor":4
+    "scheduler": "CosineAnnealingLR",
+    "scheduler-args": "[500]",
+    "scheduler-kwargs": "{}"
 }
 
 HELP = {
@@ -71,8 +68,5 @@ HELP = {
     "inference-only": "Only use the inference model. Do not train",
     "scheduler": "Learning Rate Scheduler",
     "scheduler-args": "Args for scheduler",
-    "scheduler-kwargs": "Keyword arguments for scheduler",
-    "pad-length": "Length of sequence for padding",
-    "num-workers": "Number of jobs for loading",
-    "prefetch-factor": "Prefetch factor"
+    "scheduler-kwargs": "Keyword arguments for scheduler"
 }

@@ -14,7 +14,6 @@ class BiGRU(nn.Module):
         self.hidden_size = hidden_size
         self.lstm = nn.GRU(dim, self.hidden_size, num_layers=num_layers,
                             bidirectional=bidirectional, batch_first=True)
-        self.batchnorm = nn.BatchNorm1d(seqlen)
         self.linear = nn.Linear(seqlen*hidden_size*2, hidden_size)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(drp)
@@ -22,7 +21,6 @@ class BiGRU(nn.Module):
 
     def forward(self, x):
         h_lstm, _ = self.lstm(x)
-        h_lstm = self.batchnorm(h_lstm)
         h_flat = torch.flatten(h_lstm, 1)
         out = self.relu(self.linear(h_flat))
         out = self.dropout(out)
