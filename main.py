@@ -7,19 +7,19 @@ import inspect
 import numpy as np
 import copy
 import pandas as pd
-import torch.multiprocessing
-torch.multiprocessing.set_sharing_strategy('file_system')
+
 from torch import nn, optim
 from torch.utils.data import DataLoader, Subset
 
 from sklearn.model_selection import KFold
 
-from dynamic_brainage.dataloaders.get_dataset import get_dataset, get_ramset
+from dynamic_brainage.dataloaders.get_dataset import get_dataset
 from dynamic_brainage.dataloaders.CSVDataset import CSVDataset, get_subset
-from dynamic_brainage.dataloaders.CSVDataset_preload import RAMDataset, get_ram_subset
 from dynamic_brainage.models.get_model import get_model
 from dynamic_brainage.defaults.default_args import DEFAULTS, HELP
 from dynamic_brainage.defaults.testing import DEFAULTS, HELP
+
+from scipy.io import savemat
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -53,19 +53,17 @@ if args.scheduler is not None:
     else:
         args.scheduler = None
 # Resolve dataset and model
-print("Loading train data...")
 full_train_dataset = None
 if args.train_dataset is not None:
-    full_train_dataset = get_ramset(args.train_dataset,
+    full_train_dataset = get_dataset(args.train_dataset,
                                      *json.loads(args.train_dataset_args),
-                                     **json.loads(args.train_dataset_kwargs),device=device)
+                                     **json.loads(args.train_dataset_kwargs))
 full_inference_dataset = None
 if args.test_dataset is not None:
-    print("Loading inference data....")
     if args.test_dataset.lower() != "valid":
-        full_inference_dataset = get_ramset(args.test_dataset,
+        full_inference_dataset = get_dataset(args.test_dataset,
                                              *json.loads(args.test_dataset_args),
-                                             **json.loads(args.test_dataset_kwargs),device=device)
+                                             **json.loads(args.test_dataset_kwargs))
         
         
 model = get_model(args.model, 
@@ -103,23 +101,16 @@ if full_train_dataset is not None:
         if k == args.k:
             break
     if isinstance(full_train_dataset, CSVDataset):
-        print("Getting train CSV subset...")
         train_dataset = get_subset(full_train_dataset, train_idx)
-        print("Getting valid CSV subset...")
         valid_dataset = get_subset(full_train_dataset, valid_idx)
-    elif isinstance(full_train_dataset, RAMDataset):
-        print("Getting train RAM subset...")
-        train_dataset = get_ram_subset(full_train_dataset, train_idx)
-        print("Getting valid RAM subset...")
-        valid_dataset = get_ram_subset(full_train_dataset, valid_idx)
     else:
         train_dataset = Subset(full_train_dataset, train_idx)
         valid_dataset = Subset(full_train_dataset, valid_idx)
     if args.test_dataset.lower() == "valid":
         full_inference_dataset = copy.deepcopy(valid_dataset)
     #full_inference_dataset = dataset_with_indices(full_inference_dataset)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, prefetch_factor=args.prefetch_factor, shuffle=True)
-    valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, num_workers=args.num_workers, prefetch_factor=args.prefetch_factor, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=14, prefetch_factor=2, shuffle=True)
+    valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, num_workers=14, prefetch_factor=2, shuffle=True)
     # model training
     rows_batches = []
     rows_epochs = []
@@ -237,14 +228,14 @@ if full_train_dataset is not None:
                     os.path.join(args.logdir, "checkpoints", "best.pth")
                 )
                 best_loss = np.mean(running_loss)
-                print("Saved at epoch %d" % epoch)    
+                print("Saved at epoch %d" % epoch)
 
 if full_inference_dataset is not None:
     test_loader = DataLoader(full_inference_dataset,
                              batch_size=args.batch_size, 
                              shuffle=True, 
-                             num_workers=args.num_workers, 
-                             prefetch_factor=args.prefetch_factor)
+                             num_workers=12, 
+                             prefetch_factor=2)
     new_model = get_model(args.model, 
                   *json.loads(args.model_args),
                   **json.loads(args.model_kwargs)).to(device)
@@ -277,50 +268,56 @@ if full_inference_dataset is not None:
         all_predictions.append(yhat.detach().cpu().numpy())
         loss = criterion(yhat.view_as(y), y)
         stacked = torch.stack([yhat, y.view_as(yhat)], 0).squeeze()
-        corr = torch.corrcoef(stacked).flatten()[1]
-        if torch.isnan(corr).item():
-            corr = torch.Tensor([0.])
+#         corr = torch.corrcoef(stacked).flatten()[1]
+#         if torch.isnan(corr).item():
+#             corr = torch.Tensor([0.])
         test_rows.append(dict(step=step, 
                                 epoch=0, 
                                 batch_index=batch_i, 
-                                loss=loss.item(), 
-                                corr=corr.item()))
+                                loss=loss.item()))
+#         test_rows.append(dict(step=step, 
+#                                 epoch=0, 
+#                                 batch_index=batch_i, 
+#                                 loss=loss.item(), 
+#                                 corr=corr.item()))
         running_loss.append(loss.item())
-        running_corr.append(corr.item())
+#         running_corr.append(corr.item())
         step += 1        
-        pbar.set_description("%d/%d     Loss:%.6f     :%.4f+-%.3f     Corr:%.6f:%.4f±%.3f     " % (batch_i+1, 
+#         pbar.set_description("%d/%d     Loss:%.6f     :%.4f+-%.3f     Corr:%.6f:%.4f±%.3f     " % (batch_i+1, 
+        pbar.set_description("%d/%d     Loss:%.6f     :%.4f+-%.3f     Corr:N/A     " % (batch_i+1, 
                                                                                     len(test_loader), 
                                                                                     running_loss[-1], 
                                                                                     np.mean(running_loss), 
-                                                                                    np.std(running_loss), 
-                                                                                    running_corr[-1],
-                                                                                    np.mean(running_corr),
-                                                                                    np.std(running_corr)))
+                                                                                    np.std(running_loss)))
+#                                                                                     running_corr[-1],
+#                                                                                     np.mean(running_corr),
+#                                                                                     np.std(running_corr)))
         test_rows_accumulated.append(dict(epoch=0,
             loss_mean=np.mean(running_loss),
             loss_std=np.std(running_loss),
-            corr_mean=np.mean(running_corr),
-            corr_std=np.std(running_corr),
+#             corr_mean=np.mean(running_corr),
+#             corr_std=np.std(running_corr),
         ))
         pd.DataFrame(test_rows).to_csv(os.path.join(args.logdir, "logs", "test_full.csv"), index=False)
         pd.DataFrame(test_rows_accumulated).to_csv(os.path.join(args.logdir, "logs", "test.csv"), index=False)
     all_predictions = np.concatenate(all_predictions, 0)
-    all_deltas = np.concatenate(all_deltas, 0)
+#     all_deltas = np.concatenate(all_deltas, 0)
     all_indices = np.concatenate(all_indices, 0)
     sidx = np.argsort(all_indices)
     all_predictions = all_predictions[sidx]
-    all_deltas = all_deltas[sidx]
-    predict_df = pd.DataFrame([dict(subject=sub,
-                 session=ses,
-                 label=l,
-                 prediction=p[0],
-                 delta=d,
-                 filepath=f) for (sub, ses, l, p, d, f) in zip(
-                     full_inference_dataset.subjects,
-                     full_inference_dataset.sessions,
-                     full_inference_dataset.labels,
-                     all_predictions,
-                     all_deltas,
-                     full_inference_dataset.file_paths,
-                 )])
-    predict_df.to_csv(os.path.join(args.logdir,"logs", "predictions.csv"), index=False)
+#     all_deltas = all_deltas[sidx]
+#     predict_df = pd.DataFrame([dict(subject=sub,
+#                  session=ses,
+#                  label=l,
+#                  prediction=p[0],
+#                  delta=d,
+#                  filepath=f) for (sub, ses, l, p, d, f) in zip(
+#                      full_inference_dataset.subjects,
+#                      full_inference_dataset.sessions,
+#                      full_inference_dataset.labels,
+#                      all_predictions,
+#                      all_deltas,
+#                      full_inference_dataset.file_paths,
+#                  )])
+#     predict_df.to_csv(os.path.join(args.logdir,"logs", "predictions.csv"), index=False)
+    savemat(os.path.join(args.logdir,"logs", "predictions.mat"), {"preds": all_predictions})
